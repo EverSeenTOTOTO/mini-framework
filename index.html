@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+
+<body>
+  <script src="./dist/vue.js"></script>
+  <script>
+    const {fragment, div, button, evalVNode} = window.Vue;
+
+    const vdom = fragment([
+      div(
+        ['Hello World'],
+        {
+          style: {
+            width: 300,
+            height: 50,
+            color: 'blue',
+          },
+        },
+      ),
+      button(
+        ['Click Me'],
+        {
+          onClick: () => console.log('hello world'),
+        },
+      ),
+    ]);
+
+    document.body.append(...evalVNode(vdom));
+  </script>
+</body>

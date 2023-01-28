@@ -25,6 +25,7 @@ module.exports = {
     'no-console': 'off',
     'no-nested-ternary': 'off',
     'arrow-body-style': 'off',
+    'import/extensions': 'off',
     'object-curly-newline': 'off',
     'import/prefer-default-export': 'off',
     'import/no-extraneous-dependencies': 'warn',

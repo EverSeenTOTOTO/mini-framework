@@ -38,6 +38,7 @@ export default [
       {
         file: path.resolve(__dirname, 'dist/react.js'),
         format: 'umd',
+        name: 'React',
         sourcemap: true,
       },
     ],
@@ -49,6 +50,7 @@ export default [
       {
         file: path.resolve(__dirname, 'dist/vue.js'),
         format: 'umd',
+        name: 'Vue',
         sourcemap: true,
       },
     ],
