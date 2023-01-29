@@ -2,16 +2,15 @@
  * @jest-environment jsdom
  */
 
-import * as h from './vnode';
-import * as canvas from './target-canvas';
+import * as c from './target-canvas';
 
 beforeAll(() => {
   document.body.append(document.createElement('canvas'));
 });
 
 it('test emitVNode', () => {
-  const insts = canvas.emitInsts(h.fragment([
-    h.div(
+  const insts = c.emitInsts(c.fragment([
+    c.div(
       ['Hello World'],
       {
         style: {
@@ -22,7 +21,7 @@ it('test emitVNode', () => {
         },
       },
     ),
-    h.button(
+    c.button(
       ['Click Me'],
       {
         onClick: () => console.log('hello world'),

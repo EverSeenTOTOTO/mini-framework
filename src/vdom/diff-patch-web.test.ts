@@ -16,21 +16,21 @@ it('test doInsert', () => {
     type: 'insert',
     index: -1,
     target: document.body,
-    value: div,
+    value: [div],
   })).toThrow();
 
   expect(() => web.doInsert({
     type: 'insert',
     index: 1,
     target: document.body,
-    value: div,
+    value: [div],
   })).toThrow();
 
   web.doInsert({
     type: 'insert',
     index: 0,
     target: document.body,
-    value: div,
+    value: [div],
   });
 
   expect(document.querySelectorAll('div').length).toBe(1);
@@ -40,10 +40,10 @@ it('test doInsert', () => {
     type: 'insert',
     index: 0,
     target: document.body,
-    value: document.createElement('div'),
+    value: [document.createElement('div'), document.createElement('div')],
   });
 
-  expect(document.querySelectorAll('div').length).toBe(2);
+  expect(document.querySelectorAll('div').length).toBe(3);
   expect(document.querySelector('body > div:last-child')).toBe(div);
 });
 
@@ -54,7 +54,7 @@ it('test doDelete', () => {
     type: 'insert',
     index: 0,
     target: document.body,
-    value: div,
+    value: [div],
   });
 
   expect(document.querySelectorAll('div').length).toBe(1);
@@ -74,7 +74,7 @@ it('test doChange text', () => {
     type: 'insert',
     index: 0,
     target: document.body,
-    value: text,
+    value: [text],
   });
 
   expect(getByText(document.body, 'hello')).toBe(document.body);
@@ -100,7 +100,7 @@ it('test doChange style', () => {
     type: 'insert',
     index: 0,
     target: document.body,
-    value: div,
+    value: [div],
   });
 
   expect(div.style.getPropertyValue('width')).toBe('400px');
@@ -113,7 +113,7 @@ it('test doChange style', () => {
     value: {
       width: '300px',
       height: '200px',
-      color: null,
+      color: undefined,
     },
     target: div,
   });
@@ -137,7 +137,7 @@ it('test doChange event', () => {
     type: 'change',
     detail: 'event',
     value: {
-      click: [null, increment],
+      click: [undefined, increment],
     },
     target: button,
   });
@@ -145,7 +145,7 @@ it('test doChange event', () => {
     type: 'change',
     detail: 'event',
     value: {
-      click: [null, () => { i += 1; }], // add another increment
+      click: [undefined, () => { i += 1; }], // add another increment
     },
     target: button,
   });
@@ -169,7 +169,7 @@ it('test doChange event', () => {
     type: 'change',
     detail: 'event',
     value: {
-      click: [decrement],
+      click: [decrement, undefined],
     },
     target: button,
   });

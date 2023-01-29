@@ -1,7 +1,11 @@
 /* eslint-disable no-param-reassign */
 import * as ts from './vnode';
 
-export function doAction(action: ts.PatchAction) {
+export type PatchActionWeb = ts.ActionChange<ts.ActionChangeDetail, Node> |
+ts.ActionDelete<Node> |
+ts.ActionInsert<Node, Node[]>;
+
+export function doAction(action: PatchActionWeb) {
   switch (action.type) {
     case 'change':
       return doChange(action);
@@ -14,81 +18,74 @@ export function doAction(action: ts.PatchAction) {
   }
 }
 
-export function doInsert(action: ts.ActionInsert) {
-  const target = action.target as Element;
-  const value = action.value as Element;
-  const children = Array.from(target.children);
+export function doInsert(action: ts.ActionInsert<Node, Node[]>) {
+  if (!(action.target instanceof HTMLElement)) throw new Error('Target is not an HTMLElement');
+
+  const children = Array.from(action.target.children);
 
   if (action.index < 0 || action.index > children.length) {
     throw new Error(`Invalid insert index: ${action.index}`);
   }
 
   if (action.index === children.length) {
-    target.append(value);
+    action.target.append(...action.value);
   } else {
-    const sibling = target.children[action.index];
+    const sibling = action.target.children[action.index];
 
-    target.insertBefore(value, sibling);
+    action.value.reduce<Node>((p, c) => {
+      action.target.insertBefore(c, p);
+      return c;
+    }, sibling);
   }
 }
 
-export function doDelete(action: ts.ActionDelete) {
-  const target = action.target as Element;
-
-  if (target.parentElement) {
-    target.parentElement.removeChild(target);
+export function doDelete(action: ts.ActionDelete<Node>) {
+  if (action.target.parentElement) {
+    action.target.parentElement.removeChild(action.target);
   }
 }
 
-export function doChange(action: ts.ActionChange) {
+export function doChange(action: ts.ActionChange<ts.ActionChangeDetail, Node>) {
   switch (action.detail) {
     case 'text':
-      return doChangeText(action);
+      return doChangeText(action as ts.ActionChange<'text', Node>);
     case 'style':
-      return doChangeStyle(action);
+      return doChangeStyle(action as ts.ActionChange<'style', Node>);
     case 'event':
-      return doChangeEvent(action);
+      return doChangeEvent(action as ts.ActionChange<'event', Node>);
     default:
       throw new Error(`Unknown action: ${action.detail}`);
   }
 }
 
-function doChangeText(action: ts.ActionChange) {
-  if (!(action.target instanceof Text)) {
-    throw new Error(`Invalid changeText target: ${action.target}`);
-  }
-
+function doChangeText(action: ts.ActionChange<'text', Node>) {
   action.target.nodeValue = action.value as string;
 }
 
-function doChangeStyle(action: ts.ActionChange) {
-  const target = action.target as HTMLElement;
-  const styles = action.value as Record<string, string>;
+function doChangeStyle(action: ts.ActionChange<'style', Node>) {
+  if (!(action.target instanceof HTMLElement)) throw new Error('Target is not an HTMLElement');
 
-  for (const prop of Object.keys(styles)) {
-    const style = styles[prop];
+  for (const prop of Object.keys(action.value)) {
+    const style = action.value[prop];
 
     if (style) {
-      target.style.setProperty(prop, style);
+      action.target.style.setProperty(prop, style);
     } else {
-      target.style.removeProperty(prop);
+      action.target.style.removeProperty(prop);
     }
   }
 }
 
-function doChangeEvent(action: ts.ActionChange) {
-  const target = action.target as Element;
-  const handlers = action.value as Record<string, [unknown, unknown]>;
+function doChangeEvent(action: ts.ActionChange<'event', Node>) {
+  for (const evt of Object.keys(action.value)) {
+    const [oldHandler, newHandler] = action.value[evt];
 
-  for (const evt of Object.keys(handlers)) {
-    const [oldHandler, newHandler] = handlers[evt];
-
-    if (typeof oldHandler === 'function') {
-      target.removeEventListener(evt, oldHandler as EventListener);
+    if (oldHandler) {
+      action.target.removeEventListener(evt, oldHandler);
     }
 
-    if (typeof newHandler === 'function') {
-      target.addEventListener(evt, newHandler as EventListener);
+    if (newHandler) {
+      action.target.addEventListener(evt, newHandler);
     }
   }
 }

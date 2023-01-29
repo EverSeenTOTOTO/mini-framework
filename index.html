@@ -26,12 +26,12 @@
     ]);
   </script>
   <script>
-    const {evalVNode} = window.Vue;
+    const {evalVNode} = window.Vue.web;
 
     document.body.append(...evalVNode(vdom));
   </script>
   <script>
-    const {emitInsts, execInst} = window.Vue;
+    const {emitInsts, execInst} = window.Vue.canvas;
     const canvas = document.createElement('canvas');
 
     canvas.width = 800;

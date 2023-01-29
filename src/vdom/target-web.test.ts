@@ -3,15 +3,14 @@
  */
 
 import { getByText } from '@testing-library/dom';
-import * as h from './vnode';
-import * as web from './target-web';
+import * as w from './target-web';
 
 beforeEach(() => {
   document.body.innerHTML = '';
 });
 
 it('test evalText', () => {
-  const text = web.evalText({
+  const text = w.evalText({
     tag: 'text',
     text: 'hello world',
   });
@@ -21,7 +20,7 @@ it('test evalText', () => {
 });
 
 it('test evalDiv', () => {
-  const div = web.evalDiv({
+  const div = w.evalDiv({
     tag: 'div',
     children: [
       {
@@ -42,7 +41,7 @@ it('test evalDiv', () => {
 
 it('test evalButton', () => {
   let count = 0;
-  const btn = web.evalButton({
+  const btn = w.evalButton({
     tag: 'button',
     children: [
       {
@@ -69,7 +68,7 @@ it('test evalButton', () => {
 });
 
 it('test evalFragment', () => {
-  const elems = web.evalFragment({
+  const elems = w.evalFragment({
     tag: 'fragment',
     children: [],
   });
@@ -80,8 +79,8 @@ it('test evalFragment', () => {
 
 it('test evalVNode', () => {
   let count = 0;
-  const app = web.evalVNode(h.fragment([
-    h.div(
+  const app = w.evalVNode(w.fragment([
+    w.div(
       ['Hello World'],
       {
         style: {
@@ -92,7 +91,7 @@ it('test evalVNode', () => {
         },
       },
     ),
-    h.button(
+    w.button(
       ['Click Me'],
       {
         onClick: () => { count += 1; },

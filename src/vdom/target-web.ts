@@ -1,8 +1,12 @@
 /* eslint-disable no-param-reassign */
-import type * as ts from './vnode';
+import * as ts from './vnode';
 import { flattern } from '@/utils';
 
-export function evalVNode(node: ts.VNode) {
+export const fragment = ts.createElement<Node[], 'fragment'>('fragment');
+export const div = ts.createElement<Node[], 'div'>('div');
+export const button = ts.createElement<Node[], 'button'>('button');
+
+export function evalVNode(node: ts.VNode<Node[]>) {
   switch (node.tag) {
     case 'fragment':
       return evalFragment(node);
@@ -17,28 +21,26 @@ export function evalVNode(node: ts.VNode) {
   }
 }
 
-type Elem = Comment | HTMLElement | Text;
-
-function evalSeq(nodes: ts.VNode[]) {
-  return flattern(nodes.map(evalVNode)) as Elem[]; // flattern
+function evalSeq(nodes: ts.VNode<Node[]>[]) {
+  return flattern(nodes.map(evalVNode)) as Node[]; // flattern
 }
 
 let id = 0;
-export function evalFragment(node: ts.VNodeFragment): Elem[] {
+export function evalFragment(node: ts.VNodeFragment<Node[]>): Node[] {
   const start = document.createComment(`fragment ${id} start`);
   const end = document.createComment(`fragment ${id} end`);
 
   id += 1;
 
-  node.output = [start, end];
+  node.output = [start, ...evalSeq(node.children), end];
 
-  return [start, ...evalSeq(node.children), end];
+  return node.output;
 }
 
-export function evalText(node: ts.VNodeText): Text {
+export function evalText(node: ts.VNodeText<Node[]>): Text {
   const text = document.createTextNode(node.text);
 
-  node.output = text;
+  node.output = [text];
 
   return text;
 }
@@ -61,21 +63,21 @@ function bindStyle(el: HTMLElement, style: ts.AttrStyle) {
   }
 }
 
-export function evalDiv(node: ts.VNodeDiv): HTMLDivElement {
-  const div = document.createElement('div');
+export function evalDiv(node: ts.VNodeDiv<Node[]>): HTMLDivElement {
+  const elem = document.createElement('div');
 
   if (node.attr?.style) {
-    bindStyle(div, node.attr.style);
+    bindStyle(elem, node.attr.style);
   }
 
-  div.append(...evalSeq(node.children));
+  elem.append(...evalSeq(node.children));
 
-  node.output = div;
+  node.output = [elem];
 
-  return div;
+  return elem;
 }
 
-export function evalButton(node: ts.VNodeButton): HTMLButtonElement {
+export function evalButton(node: ts.VNodeButton<Node[]>): HTMLButtonElement {
   const btn = document.createElement('button');
 
   if (node.attr?.style) {
@@ -88,7 +90,7 @@ export function evalButton(node: ts.VNodeButton): HTMLButtonElement {
 
   btn.append(...evalSeq(node.children));
 
-  node.output = btn;
+  node.output = [btn];
 
   return btn;
 }
