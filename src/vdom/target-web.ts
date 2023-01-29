@@ -1,6 +1,5 @@
 /* eslint-disable no-param-reassign */
-/* eslint-disable @typescript-eslint/no-use-before-define */
-import type * as ts from '.';
+import type * as ts from './vnode';
 import { flattern } from '@/utils';
 
 export function evalVNode(node: ts.VNode) {
@@ -31,11 +30,17 @@ export function evalFragment(node: ts.VNodeFragment): Elem[] {
 
   id += 1;
 
+  node.output = [start, end];
+
   return [start, ...evalSeq(node.children), end];
 }
 
 export function evalText(node: ts.VNodeText): Text {
-  return document.createTextNode(node.text);
+  const text = document.createTextNode(node.text);
+
+  node.output = text;
+
+  return text;
 }
 
 function bindStyle(el: HTMLElement, style: ts.AttrStyle) {
@@ -65,6 +70,8 @@ export function evalDiv(node: ts.VNodeDiv): HTMLDivElement {
 
   div.append(...evalSeq(node.children));
 
+  node.output = div;
+
   return div;
 }
 
@@ -80,6 +87,8 @@ export function evalButton(node: ts.VNodeButton): HTMLButtonElement {
   }
 
   btn.append(...evalSeq(node.children));
+
+  node.output = btn;
 
   return btn;
 }

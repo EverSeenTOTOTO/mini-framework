@@ -1,9 +1,13 @@
-export type VNodeFragment = {
+type VNodeBase<T> = {
+  output?: T
+};
+
+export type VNodeFragment = VNodeBase<[Comment, Comment]> & {
   tag: 'fragment',
   children: VNode[],
 };
 
-export type VNodeText = {
+export type VNodeText = VNodeBase<Text> & {
   tag: 'text',
   text: string,
 };
@@ -16,7 +20,7 @@ export type AttrStyle = {
   // ...
 };
 
-export type VNodeDiv = {
+export type VNodeDiv = VNodeBase<HTMLDivElement> & {
   tag: 'div',
   attr?: {
     style?: AttrStyle
@@ -26,7 +30,7 @@ export type VNodeDiv = {
 
 export type AttrEvent = (event: unknown) => void;
 
-export type VNodeButton = {
+export type VNodeButton = VNodeBase<HTMLButtonElement> & {
   tag: 'button',
   attr?: {
     style?: AttrStyle,
@@ -64,3 +68,26 @@ const createElement = <Tag extends VNodeTags>(tag: Tag) => (children: (VNode | s
 export const fragment = createElement('fragment');
 export const div = createElement('div');
 export const button = createElement('button');
+
+/* diff-patch actions */
+
+export type ActionChange = {
+  type: 'change',
+  detail: 'text' | 'style' | 'event',
+  value: unknown, // set undefined to remove
+  target: unknown,
+};
+
+export type ActionDelete = {
+  type: 'delete',
+  target: unknown
+};
+
+export type ActionInsert = {
+  type: 'insert',
+  index: number,
+  target: unknown,
+  value: unknown
+};
+
+export type PatchAction = ActionChange | ActionInsert | ActionDelete;

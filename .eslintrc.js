@@ -27,8 +27,10 @@ module.exports = {
     'arrow-body-style': 'off',
     'import/extensions': 'off',
     'object-curly-newline': 'off',
+    'no-restricted-syntax': 'off',
     'import/prefer-default-export': 'off',
     'import/no-extraneous-dependencies': 'warn',
+    '@typescript-eslint/no-use-before-define': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
   },
 };

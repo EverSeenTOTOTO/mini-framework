@@ -1,6 +1,5 @@
 /* eslint-disable no-param-reassign */
-/* eslint-disable @typescript-eslint/no-use-before-define */
-import type * as ts from '.';
+import type * as ts from './vnode';
 import { flattern } from '@/utils';
 
 export type InstComment = {
@@ -78,7 +77,7 @@ InstSave |
 InstRestore |
 InstComment;
 
-/** ** execute instructions *** */
+/* execute instructions */
 
 export function execInst(inst: RenderInst, ctx: CanvasRenderingContext2D) {
   switch (inst.name) {
@@ -154,7 +153,7 @@ function execRestore(_inst: InstRestore, ctx: CanvasRenderingContext2D) {
   ctx.restore();
 }
 
-/** ** emit instructions *** */
+/* emit instructions */
 
 // is there an API to track painter cursor coordinates inside a canvas?
 export type Context = {

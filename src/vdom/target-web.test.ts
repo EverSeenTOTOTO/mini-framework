@@ -3,7 +3,7 @@
  */
 
 import { getByText } from '@testing-library/dom';
-import * as h from '.';
+import * as h from './vnode';
 import * as web from './target-web';
 
 beforeEach(() => {

@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-import * as h from '.';
+import * as h from './vnode';
 import * as canvas from './target-canvas';
 
 beforeAll(() => {
