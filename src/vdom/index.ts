@@ -12,6 +12,7 @@ export type AttrStyle = {
   width?: number,
   height?: number,
   color?: string,
+  bgColor?: string,
   // ...
 };
 

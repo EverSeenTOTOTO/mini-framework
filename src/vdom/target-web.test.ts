@@ -3,6 +3,7 @@
  */
 
 import { getByText } from '@testing-library/dom';
+import * as h from '.';
 import * as web from './target-web';
 
 beforeEach(() => {
@@ -79,36 +80,28 @@ it('test evalFragment', () => {
 
 it('test evalVNode', () => {
   let count = 0;
-  const app = web.evalVNode({
-    tag: 'fragment',
-    children: [
+  const app = web.evalVNode(h.fragment([
+    h.div(
+      ['Hello World'],
       {
-        tag: 'div',
-        children: [
-          {
-            tag: 'button',
-            children: [
-              {
-                tag: 'text',
-                text: 'click me',
-              },
-            ],
-            attr: {
-              onClick: () => { count += 1; },
-            },
-          },
-        ],
-        attr: {
-          style: {
-            width: 300,
-          },
+        style: {
+          width: 300,
+          height: 50,
+          color: 'blue',
+          bgColor: '#e4e4e4',
         },
       },
-    ],
-  });
+    ),
+    h.button(
+      ['Click Me'],
+      {
+        onClick: () => { count += 1; },
+      },
+    ),
+  ]));
   document.body.append(...(app as HTMLElement[]));
 
-  const btn = getByText(document.body, 'click me');
+  const btn = getByText(document.body, 'Click Me');
 
   expect(btn).not.toBeNull();
 

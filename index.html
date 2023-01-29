@@ -3,7 +3,7 @@
 <body>
   <script src="./dist/vue.js"></script>
   <script>
-    const {fragment, div, button, evalVNode} = window.Vue;
+    const {fragment, div, button} = window.Vue;
 
     const vdom = fragment([
       div(
@@ -13,6 +13,7 @@
             width: 300,
             height: 50,
             color: 'blue',
+            bgColor: '#e4e4e4'
           },
         },
       ),
@@ -23,7 +24,26 @@
         },
       ),
     ]);
+  </script>
+  <script>
+    const {evalVNode} = window.Vue;
 
     document.body.append(...evalVNode(vdom));
+  </script>
+  <script>
+    const {emitInsts, execInst} = window.Vue;
+    const canvas = document.createElement('canvas');
+
+    canvas.width = 800;
+    canvas.height = 400;
+
+    const container = document.createElement('div');
+    container.append(canvas);
+    document.body.append(container);
+
+    const ctx = canvas.getContext('2d');
+    const insts = emitInsts(vdom);
+
+    insts.forEach(inst => execInst(inst, ctx));
   </script>
 </body>

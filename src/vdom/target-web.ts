@@ -1,6 +1,7 @@
 /* eslint-disable no-param-reassign */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import type * as ts from '.';
+import { flattern } from '@/utils';
 
 export function evalVNode(node: ts.VNode) {
   switch (node.tag) {
@@ -19,8 +20,8 @@ export function evalVNode(node: ts.VNode) {
 
 type Elem = Comment | HTMLElement | Text;
 
-function evalSeq(nodes: ts.VNode[]): Elem[] {
-  return nodes.map(evalVNode).reduce((p: Elem[], c) => [...p, ...(Array.isArray(c) ? c : [c])], []); // flattern
+function evalSeq(nodes: ts.VNode[]) {
+  return flattern(nodes.map(evalVNode)) as Elem[]; // flattern
 }
 
 let id = 0;
@@ -49,6 +50,10 @@ function bindStyle(el: HTMLElement, style: ts.AttrStyle) {
   if (style.color) {
     el.style.color = style.color;
   }
+
+  if (style.bgColor) {
+    el.style.backgroundColor = style.bgColor;
+  }
 }
 
 export function evalDiv(node: ts.VNodeDiv): HTMLDivElement {
@@ -71,7 +76,7 @@ export function evalButton(node: ts.VNodeButton): HTMLButtonElement {
   }
 
   if (node.attr?.onClick) {
-    btn.onclick = node.attr.onClick;
+    btn.addEventListener('click', node.attr.onClick);
   }
 
   btn.append(...evalSeq(node.children));
