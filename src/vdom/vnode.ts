@@ -37,10 +37,11 @@ export interface VNodeButton<T> extends VNodeBase<T, 'button'> {
 }
 
 export type VNode<T> = VNodeFragment<T> | VNodeText<T> | VNodeDiv<T> | VNodeButton<T>;
-export type VNodeTags<T> = VNode<T>['tag'];
 
 // map string to VNodeText, convenient to creae plain text nodes
 const mapVNode = <T>(x: VNode<T> | string) => (typeof x === 'string' ? { tag: 'text', text: x } : x);
+
+type VNodeTags<T> = VNode<T>['tag'];
 
 type GetVNodeType<T, Tag extends VNodeTags<T>> = VNode<T> extends infer N
   ? N extends { tag: string }

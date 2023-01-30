@@ -2,11 +2,18 @@
 import * as ts from './vnode';
 import { flattern } from '@/utils';
 
+export type VNodeFragment = ts.VNodeFragment<Node[]>;
+export type VNodeText = ts.VNodeText<Node[]>;
+export type VNodeDiv = ts.VNodeDiv<Node[]>;
+export type VNodeButton = ts.VNodeButton<Node[]>;
+
+export type VNode = ts.VNode<Node[]>;
+
 export const fragment = ts.createElement<Node[], 'fragment'>('fragment');
 export const div = ts.createElement<Node[], 'div'>('div');
 export const button = ts.createElement<Node[], 'button'>('button');
 
-export function evalVNode(node: ts.VNode<Node[]>) {
+export function evalVNode(node: VNode) {
   switch (node.tag) {
     case 'fragment':
       return evalFragment(node);
@@ -21,12 +28,12 @@ export function evalVNode(node: ts.VNode<Node[]>) {
   }
 }
 
-function evalSeq(nodes: ts.VNode<Node[]>[]) {
+function evalSeq(nodes: VNode[]) {
   return flattern(nodes.map(evalVNode)) as Node[]; // flattern
 }
 
 let id = 0;
-export function evalFragment(node: ts.VNodeFragment<Node[]>): Node[] {
+export function evalFragment(node: VNodeFragment): Node[] {
   const start = document.createComment(`fragment ${id} start`);
   const end = document.createComment(`fragment ${id} end`);
 
@@ -37,7 +44,7 @@ export function evalFragment(node: ts.VNodeFragment<Node[]>): Node[] {
   return node.output;
 }
 
-export function evalText(node: ts.VNodeText<Node[]>): Text {
+export function evalText(node: VNodeText) {
   const text = document.createTextNode(node.text);
 
   node.output = [text];
@@ -63,7 +70,7 @@ function bindStyle(el: HTMLElement, style: ts.AttrStyle) {
   }
 }
 
-export function evalDiv(node: ts.VNodeDiv<Node[]>): HTMLDivElement {
+export function evalDiv(node: VNodeDiv) {
   const elem = document.createElement('div');
 
   if (node.attr?.style) {
@@ -77,7 +84,7 @@ export function evalDiv(node: ts.VNodeDiv<Node[]>): HTMLDivElement {
   return elem;
 }
 
-export function evalButton(node: ts.VNodeButton<Node[]>): HTMLButtonElement {
+export function evalButton(node: VNodeButton) {
   const btn = document.createElement('button');
 
   if (node.attr?.style) {

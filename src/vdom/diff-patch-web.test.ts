@@ -3,9 +3,15 @@
  */
 
 import { getByText } from '@testing-library/dom';
+import * as h from './target-web';
 import * as web from './diff-patch-web';
 
+let i = 0;
+const increment = () => { i += 1; };
+const decrement = () => { i -= 1; };
+
 beforeEach(() => {
+  i = 0;
   document.body.innerHTML = '';
 });
 
@@ -61,7 +67,7 @@ it('test doDelete', () => {
 
   web.doDelete({
     type: 'delete',
-    target: div,
+    target: [div],
   });
 
   expect(document.querySelectorAll('div').length).toBe(0);
@@ -126,10 +132,6 @@ it('test doChange style', () => {
 it('test doChange event', () => {
   const button = document.createElement('button');
 
-  let i = 0;
-  const increment = () => { i += 1; };
-  const decrement = () => { i -= 1; };
-
   button.click();
   expect(i).toBe(0);
 
@@ -137,7 +139,7 @@ it('test doChange event', () => {
     type: 'change',
     detail: 'event',
     value: {
-      click: [undefined, increment],
+      onClick: [undefined, increment],
     },
     target: button,
   });
@@ -145,19 +147,7 @@ it('test doChange event', () => {
     type: 'change',
     detail: 'event',
     value: {
-      click: [undefined, () => { i += 1; }], // add another increment
-    },
-    target: button,
-  });
-
-  button.click();
-  expect(i).toBe(2);
-
-  web.doChange({
-    type: 'change',
-    detail: 'event',
-    value: {
-      click: [increment, decrement],
+      onClick: [undefined, () => { i += 1; }], // add another increment
     },
     target: button,
   });
@@ -169,11 +159,114 @@ it('test doChange event', () => {
     type: 'change',
     detail: 'event',
     value: {
-      click: [decrement, undefined],
+      onClick: [increment, decrement],
+    },
+    target: button,
+  });
+
+  button.click();
+  expect(i).toBe(2);
+
+  web.doChange({
+    type: 'change',
+    detail: 'event',
+    value: {
+      onClick: [decrement, undefined],
     },
     target: button,
   });
 
   button.click();
   expect(i).toBe(3);
+});
+
+it('test diffPatchReplace', () => {
+  const source = h.button(['Click']);
+  const target = h.div([]);
+
+  h.evalVNode(source);
+  document.body.append(document.createElement('div')); // test index
+  document.body.append(...source.output!);
+
+  expect(document.querySelectorAll('div').length).toBe(1);
+
+  const actions = web.diffPatchReplace(source, target);
+
+  expect(actions).toEqual([
+    {
+      type: 'delete',
+      target: source.output,
+    },
+    {
+      type: 'insert',
+      index: 1,
+      target: document.body,
+      value: target.output!,
+    },
+  ]);
+
+  actions.forEach(web.doAction);
+
+  expect(document.querySelectorAll('button').length).toBe(0);
+  expect(document.querySelectorAll('div').length).toBe(2);
+});
+
+it('test diffPatchText', () => {
+  const source: h.VNodeText = { tag: 'text', text: 'Hello' };
+  const target: h.VNodeText = { tag: 'text', text: 'World' };
+
+  h.evalVNode(source);
+
+  const actions = web.diffPatchText(source, target);
+
+  expect(actions).toEqual([
+    {
+      type: 'change',
+      detail: 'text',
+      target: source.output![0],
+      value: target.text,
+    },
+  ]);
+
+  actions.forEach(web.doAction);
+
+  expect(source.output![0].nodeValue).toBe('World');
+});
+
+it('test diffPatchAttributes', () => {
+  const source = h.button(['Click'], {
+    style: { width: 300, height: 200, color: 'blue' },
+    onClick: increment,
+  });
+  const target = h.button(['Click'], {
+    style: { height: 100, color: 'blue', bgColor: 'grey' },
+    onClick: decrement,
+  });
+
+  h.evalVNode(source);
+
+  const btn = source.output![0] as HTMLButtonElement;
+  const actions = web.diffPatchAttributes(source, target);
+
+  expect(actions).toEqual(
+    [
+      {
+        type: 'change',
+        target: btn,
+        detail: 'style',
+        value: { width: null, height: 100, bgColor: 'grey' },
+      },
+      {
+        type: 'change',
+        target: btn,
+        detail: 'event',
+        value: { onClick: [increment, decrement] },
+      },
+    ],
+  );
+
+  actions.forEach(web.doAction);
+
+  btn.click();
+  expect(i).toBe(-1);
 });

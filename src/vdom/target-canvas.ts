@@ -2,6 +2,13 @@
 import * as ts from './vnode';
 import { flattern } from '@/utils';
 
+export type VNodeFragment = ts.VNodeFragment<RenderInst[]>;
+export type VNodeText = ts.VNodeText<RenderInst[]>;
+export type VNodeDiv = ts.VNodeDiv<RenderInst[]>;
+export type VNodeButton = ts.VNodeButton<RenderInst[]>;
+
+export type VNode = ts.VNode<RenderInst[]>;
+
 export const fragment = ts.createElement<RenderInst[], 'fragment'>('fragment');
 export const div = ts.createElement<RenderInst[], 'div'>('div');
 export const button = ts.createElement<RenderInst[], 'button'>('button');
@@ -167,7 +174,7 @@ export type Context = {
   fontFamily: string,
 };
 
-export function emitInsts(node: ts.VNode<RenderInst[]>, ctx: Context = { x: 0, y: 0, fontSize: 16, fontFamily: 'sans-serif' }) {
+export function emitInsts(node: VNode, ctx: Context = { x: 0, y: 0, fontSize: 16, fontFamily: 'sans-serif' }) {
   const insts: RenderInst[] = [
     {
       name: 'reset',
@@ -190,7 +197,7 @@ export function emitInsts(node: ts.VNode<RenderInst[]>, ctx: Context = { x: 0, y
   return insts;
 }
 
-function emitVNode(node: ts.VNode<RenderInst[]>, ctx: Context) {
+function emitVNode(node: VNode, ctx: Context) {
   switch (node.tag) {
     case 'fragment':
       return emitFragment(node, ctx);
@@ -205,12 +212,12 @@ function emitVNode(node: ts.VNode<RenderInst[]>, ctx: Context) {
   }
 }
 
-function emitSeq(nodes: ts.VNode<RenderInst[]>[], ctx: Context) {
+function emitSeq(nodes: VNode[], ctx: Context) {
   return flattern(nodes.map((n) => emitVNode(n, ctx))) as RenderInst[];
 }
 
 let id = 0;
-export function emitFragment(node: ts.VNodeFragment<RenderInst[]>, ctx: Context): RenderInst[] {
+export function emitFragment(node: VNodeFragment, ctx: Context): RenderInst[] {
   const start: InstComment = {
     name: 'comment',
     message: `fragment ${id} start`,
@@ -227,7 +234,7 @@ export function emitFragment(node: ts.VNodeFragment<RenderInst[]>, ctx: Context)
   return node.output;
 }
 
-export function emitText(node: ts.VNodeText<RenderInst[]>, ctx: Context) {
+export function emitText(node: VNodeText, ctx: Context) {
   const inst: InstFillText = {
     name: 'fillText',
     text: node.text,
@@ -242,7 +249,7 @@ export function emitText(node: ts.VNodeText<RenderInst[]>, ctx: Context) {
 
 // should obey the css flow rules, compute width top-down and compute height bottom-up,
 // here we assume that the width and height are computed and always available in node.
-export function emitDiv(node: ts.VNodeDiv<RenderInst[]>, ctx: Context): RenderInst[] {
+export function emitDiv(node: VNodeDiv, ctx: Context): RenderInst[] {
   const insts: RenderInst[] = [];
   const style = {
     width: 0,
@@ -291,7 +298,7 @@ export function emitDiv(node: ts.VNodeDiv<RenderInst[]>, ctx: Context): RenderIn
   return insts;
 }
 
-export function emitButton(node: ts.VNodeButton<RenderInst[]>, ctx: Context): RenderInst[] {
+export function emitButton(node: VNodeButton, ctx: Context): RenderInst[] {
   const insts: RenderInst[] = [];
   const style = {
     // default button style
