@@ -1,6 +1,8 @@
 /**
  * @jest-environment jsdom
  */
+/* eslint-disable no-param-reassign */
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 
 import { getByText } from '@testing-library/dom';
 import * as h from './target-web';
@@ -21,13 +23,6 @@ it('test doInsert', () => {
   expect(() => web.doInsert({
     type: 'insert',
     index: -1,
-    target: document.body,
-    value: [div],
-  })).toThrow();
-
-  expect(() => web.doInsert({
-    type: 'insert',
-    index: 1,
     target: document.body,
     value: [div],
   })).toThrow();
@@ -165,7 +160,7 @@ it('test doChange event', () => {
   });
 
   button.click();
-  expect(i).toBe(2);
+  expect(i).toBe(2); // -1+1 = 0
 
   web.doChange({
     type: 'change',
@@ -269,4 +264,83 @@ it('test diffPatchAttributes', () => {
 
   btn.click();
   expect(i).toBe(-1);
+});
+
+it('test diffPatchChildren empty', () => {
+  const source = h.div([]);
+  const target = h.div([]);
+
+  h.evalVNode(source);
+
+  const actions = web.diffPatchChildren(source, target);
+
+  expect(actions).toEqual([]);
+});
+
+it('test diffPatchChildren same', () => {
+  const source = h.div(['1']);
+  const target = h.div(['1']);
+
+  h.evalVNode(source);
+
+  const actions = web.diffPatchChildren(source, target);
+
+  expect(actions).toEqual([]);
+});
+
+it('test diffPatchChildren diff', () => {
+  const source = h.div(['1']);
+  const target = h.div(['2']);
+
+  h.evalVNode(source);
+  document.body.append(...source.output!);
+
+  const actions = web.diffPatchChildren(source, target);
+
+  actions.forEach(web.doAction);
+
+  expect(document.querySelector('div')?.childNodes[0].nodeValue).toBe('2');
+});
+
+it('test diffPatchChildren more', () => {
+  const source = h.div(['1']);
+  const target = h.div(['2', '1']);
+
+  h.evalVNode(source);
+  document.body.append(...source.output!);
+
+  const actions = web.diffPatchChildren(source, target);
+
+  actions.forEach(web.doAction);
+
+  expect(document.querySelector('div')?.childNodes[0].nodeValue).toBe('2');
+  expect(document.querySelector('div')?.childNodes[1].nodeValue).toBe('1');
+});
+
+it('test diffPatchChildren less', () => {
+  const source = h.div(['2', '1']);
+  const target = h.div(['1']);
+
+  h.evalVNode(source);
+  document.body.append(...source.output!);
+
+  const actions = web.diffPatchChildren(source, target);
+
+  actions.forEach(web.doAction);
+  expect(document.querySelector('div')?.childNodes[0].nodeValue).toBe('1');
+  expect(document.querySelector('div')?.childNodes[1]).toBeUndefined();
+});
+
+it('test diffPatchChildren nested', () => {
+  const source = h.div([h.div(['2']), h.div(['1'])]);
+  const target = h.div([h.div(['1'])]);
+
+  h.evalVNode(source);
+  document.body.append(...source.output!);
+
+  const actions = web.diffPatchChildren(source, target);
+
+  actions.forEach(web.doAction);
+
+  expect(document.querySelector('div > div')?.childNodes[0].nodeValue).toBe('1');
 });

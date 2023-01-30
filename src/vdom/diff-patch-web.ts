@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable no-param-reassign */
 import * as ts from './vnode';
 import { VNode, evalVNode, VNodeText } from './target-web';
-import { diffObject } from '@/utils';
+import { diffObject, minimalEditSequence } from '@/utils';
 
 export type ActionChangeText = ts.ActionChange<'text', Node>;
 export type ActionChangeStyle = ts.ActionChange<'style', Node>;
@@ -32,11 +33,11 @@ export function doInsert(action: ActionInsert) {
 
   const children = Array.from(action.target.children);
 
-  if (action.index < 0 || action.index > children.length) {
+  if (action.index < 0) {
     throw new Error(`Invalid insert index: ${action.index}`);
   }
 
-  if (action.index === children.length) {
+  if (action.index >= children.length) {
     action.target.append(...action.value);
   } else {
     const sibling = action.target.children[action.index];
@@ -102,7 +103,6 @@ function doChangeEvent(action: ActionChangeEvent) {
 /* naive diff patch algorithm */
 
 export function diffPatch(source: VNode, target: VNode) {
-  const actions: PatchAction[] = [];
   if (source.tag !== target.tag) {
     return diffPatchReplace(source, target);
   }
@@ -111,11 +111,12 @@ export function diffPatch(source: VNode, target: VNode) {
     return diffPatchText(source, target);
   }
 
-  actions.push(...diffPatchChildren(source, target));
+  const actions: PatchAction[] = [];
 
-  if (source.tag !== 'fragment' && target.tag !== 'fragment') {
-    actions.push(...diffPatchAttributes(source, target));
-  }
+  actions.push(...diffPatchChildren(source, target));
+  actions.push(...diffPatchAttributes(source, target));
+
+  target.output = source.output;
 
   return actions;
 }
@@ -160,13 +161,14 @@ export function diffPatchText(source: VNode, target: VNode): PatchAction[] {
   return [];
 }
 
-type VNodeWithAttributes = VNode extends infer V
-  ? V extends { attr?: unknown }
-    ? V
-    : never
+// exclude VNodeText
+type VNodeWrap = VNode extends infer V
+  ? V extends { tag: 'text' }
+    ? never
+    : V
   : never;
 
-export function diffPatchAttributes(source: VNodeWithAttributes, target: VNodeWithAttributes) {
+export function diffPatchAttributes(source: VNodeWrap, target: VNodeWrap) {
   const actions: PatchAction[] = [];
 
   diffObject(source.attr ?? {}, target.attr ?? {}, (p, n, o) => {
@@ -176,7 +178,7 @@ export function diffPatchAttributes(source: VNodeWithAttributes, target: VNodeWi
   return actions;
 }
 
-function changeAttr(source: VNodeWithAttributes, key: string, newValue: any, oldValue: any): ActionChange {
+function changeAttr(source: VNodeWrap, key: string, newValue: any, oldValue: any): ActionChange {
   const createStyleValue = () => {
     const result: Record<string, any> = {};
 
@@ -196,13 +198,38 @@ function changeAttr(source: VNodeWithAttributes, key: string, newValue: any, old
   };
 }
 
-type VNodeWithChildren = VNode extends infer V
-  ? V extends { children: unknown }
-    ? V
-    : never
-  : never;
+function compareVNode(source: VNode, target: VNode) {
+  return source.tag === target.tag;
+}
 
-function diffPatchChildren(source: VNodeWithChildren, target: VNodeWithChildren) {
-  console.log(source, target);
-  return [];
+export function diffPatchChildren(source: VNodeWrap, target: VNodeWrap) {
+  const editions = minimalEditSequence(source.children, target.children, compareVNode);
+  const actions: PatchAction[] = [];
+
+  editions.forEach((e) => {
+    switch (e.action) {
+      case 'keep':
+        actions.push(...diffPatch(e.source!, e.target!));
+        break;
+      case 'insert':
+        evalVNode(e.target!);
+        actions.push({
+          type: 'insert',
+          index: e.index,
+          target: source.tag === 'fragment' ? source.output![0].parentElement! : source.output![0],
+          value: e.target!.output!,
+        });
+        break;
+      case 'delete':
+        actions.push({
+          type: 'delete',
+          target: e.source!.output!,
+        });
+        break;
+      default:
+        break;
+    }
+  });
+
+  return actions;
 }

@@ -68,10 +68,7 @@ it('test evalButton', () => {
 });
 
 it('test evalFragment', () => {
-  const elems = w.evalFragment({
-    tag: 'fragment',
-    children: [],
-  });
+  const elems = w.evalFragment(w.fragment([]));
   document.body.append(...elems);
 
   expect(document.body.innerHTML).toBe('<!--fragment 0 start--><!--fragment 0 end-->');

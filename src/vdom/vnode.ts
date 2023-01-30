@@ -4,6 +4,7 @@ interface VNodeBase<T, Tag extends string> {
 }
 
 export interface VNodeFragment<T> extends VNodeBase<T, 'fragment'> {
+  attr: undefined,
   children: VNode<T>[],
 }
 

@@ -2,7 +2,7 @@
 
 A minimal implementation for React and Vue, for fun and personal learning.
 
-For more information, read my post [here](https://cv.everseenflash.com/Framework.md).
+For more information, read my post [here](https://github.com/EverSeenTOTOTO/frontend-interview/blob/main/Framework.md).
 
 React:
 

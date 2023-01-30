@@ -5,14 +5,14 @@
   <script>
     const {fragment, div, button} = window.Vue;
 
-    const vdom = fragment([
+    const component = (state) => fragment([
       div(
-        ['Hello World'],
+        [state.text],
         {
           style: {
             width: 300,
             height: 50,
-            color: 'blue',
+            color: state.color,
             bgColor: '#e4e4e4'
           },
         },
@@ -20,30 +20,42 @@
       button(
         ['Click Me'],
         {
-          onClick: () => console.log('hello world'),
+          onClick: state.onClick,
         },
       ),
     ]);
   </script>
   <script>
-    const {evalVNode} = window.Vue.web;
+    const {render} = window.Vue;
+    let state = {
+      text: "Hello World",
+      color: 'blue',
+    }
 
-    document.body.append(...evalVNode(vdom));
+    render(component(state), document.body);
+
+    state = {
+      text: "Frontend Framework",
+      color: 'red',
+      onClick: () => console.log("clicked")
+    }
+
+    setTimeout(() => render(component(state), document.body), 4000);
   </script>
   <script>
-    const {emitInsts, execInst} = window.Vue.canvas;
-    const canvas = document.createElement('canvas');
+    // const {emitInsts, execInst} = window.Vue.canvas;
+    // const canvas = document.createElement('canvas');
 
-    canvas.width = 800;
-    canvas.height = 400;
+    // canvas.width = 800;
+    // canvas.height = 400;
 
-    const container = document.createElement('div');
-    container.append(canvas);
-    document.body.append(container);
+    // const container = document.createElement('div');
+    // container.append(canvas);
+    // document.body.append(container);
 
-    const ctx = canvas.getContext('2d');
-    const insts = emitInsts(vdom);
+    // const ctx = canvas.getContext('2d');
+    // const insts = emitInsts(vdom);
 
-    insts.forEach(inst => execInst(inst, ctx));
+    // insts.forEach(inst => execInst(inst, ctx));
   </script>
 </body>

@@ -356,6 +356,7 @@ export function emitButton(node: VNodeButton, ctx: Context): RenderInst[] {
 }
 
 function bindCanvasClick(callback: (e: MouseEvent) => void, style: Required<ts.AttrStyle>, ctx: Context) {
+  // suppose there is only one canvas on document
   const canvas = document.querySelector('canvas');
 
   if (!canvas) throw new Error('Cannot bind canvas click, canvas element not found');

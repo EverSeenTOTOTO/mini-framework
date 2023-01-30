@@ -1,9 +1,7 @@
-import * as vnode from '@/vdom/vnode';
 import * as web from '@/vdom/target-web';
-import * as canvas from '@/vdom/target-canvas';
+import { render } from '@/vdom/render-web';
 
 export default {
-  ...vnode,
-  web,
-  canvas,
+  ...web,
+  render,
 };
