@@ -67,38 +67,3 @@ export const createElement = <T, Tag extends VNodeTags<T>>(tag: Tag) => (childre
 export const fragment = createElement('fragment');
 export const div = createElement('div');
 export const button = createElement('button');
-
-/* diff-patch actions */
-
-export type ActionChangeDetail = 'text' | 'style' | 'event';
-
-export type ActionChangeTextValue = string;
-export type ActionChangeStyleValue = { [key: string]: string | undefined };
-export type ActionChangeEventValue = { [key: string]: [EventListener | undefined, EventListener | undefined] }; // [old, new]
-
-type GetActionChangeValue<Detail extends ActionChangeDetail> = Detail extends 'text'
-  ? ActionChangeTextValue
-  : Detail extends 'style'
-    ? ActionChangeStyleValue
-    : Detail extends 'event'
-      ? ActionChangeEventValue
-      : never;
-
-export type ActionChange<Detail extends ActionChangeDetail, T> = {
-  type: 'change',
-  detail: Detail,
-  value: GetActionChangeValue<Detail>,
-  target: T,
-};
-
-export type ActionDelete<T> = {
-  type: 'delete',
-  target: T
-};
-
-export type ActionInsert<T, V> = {
-  type: 'insert',
-  index: number,
-  target: T,
-  value: V
-};

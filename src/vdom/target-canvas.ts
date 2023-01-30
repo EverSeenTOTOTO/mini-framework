@@ -172,9 +172,29 @@ export type Context = {
   y: number,
   fontSize: number
   fontFamily: string,
+  eventListeners: ({ event: string, callback: EventListenerOrEventListenerObject })[]
 };
 
-export function emitInsts(node: VNode, ctx: Context = { x: 0, y: 0, fontSize: 16, fontFamily: 'sans-serif' }) {
+export function createContext(): Context {
+  return {
+    x: 0,
+    y: 0,
+    fontSize: 16,
+    fontFamily: 'sans-serif',
+    eventListeners: [],
+  };
+}
+
+export function resetContext(canvas: HTMLCanvasElement, ctx: Context) {
+  ctx.x = 0;
+  ctx.y = 0;
+  ctx.fontSize = 16;
+  ctx.fontFamily = 'sans-serif';
+  ctx.eventListeners.forEach((each) => canvas.removeEventListener(each.event, each.callback));
+  ctx.eventListeners = [];
+}
+
+export function emitInsts(node: VNode, ctx: Context) {
   const insts: RenderInst[] = [
     {
       name: 'reset',
@@ -355,19 +375,24 @@ export function emitButton(node: VNodeButton, ctx: Context): RenderInst[] {
   return insts;
 }
 
-function bindCanvasClick(callback: (e: MouseEvent) => void, style: Required<ts.AttrStyle>, ctx: Context) {
+function bindCanvasClick(cb: (e: MouseEvent) => void, style: Required<ts.AttrStyle>, ctx: Context) {
   // suppose there is only one canvas on document
   const canvas = document.querySelector('canvas');
 
   if (!canvas) throw new Error('Cannot bind canvas click, canvas element not found');
 
-  canvas.addEventListener('click', (e: MouseEvent) => {
+  const callback: EventListenerOrEventListenerObject = (evt: Event) => {
+    const e = evt as MouseEvent;
+
     if (e.offsetX >= ctx.x
       && e.offsetX <= ctx.x + style.width
       && e.offsetY >= ctx.y
       && e.offsetY <= ctx.y + style.height
     ) {
-      callback(e);
+      cb(e);
     }
-  });
+  };
+
+  canvas.addEventListener('click', callback);
+  ctx.eventListeners.push({ event: 'click', callback });
 }

@@ -4,7 +4,7 @@ A minimal implementation for React and Vue, for fun and personal learning.
 
 For more information, read my post [here](https://github.com/EverSeenTOTOTO/frontend-interview/blob/main/Framework.md).
 
-React:
+**React**:
 
 ```js
 import React from './dist/react.js';
@@ -44,7 +44,7 @@ function Counter() {
 React.render(Counter, document.getElementById("root"));
 ```
 
-Vue:
+**Vue**:
 
 ```js
 import Vue from './dist/vue.js';
@@ -80,5 +80,23 @@ const Counter = {
   }
 }
 
-Vue.createApp(Counter).mount("#root");
+Vue.render(Counter, document.getElementById("root"));
 ```
+
+## Targets
+
+The VDOM layer can be compiled to different targets:
+
+1. Web: normally render to HTML DOM
+
+    <img src="./target-web.gif" width="1200" />
+
+2. Canvas: compile to virtual render instructions and paint in `canvas`
+
+    <img src="./target-canvas.gif" width="1200" />
+
+3. QT: render to [nodegui](https://github.com/nodegui/nodegui) components
+
+4. Terminal: render to terminal
+
+5. ...

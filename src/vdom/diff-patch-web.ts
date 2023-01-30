@@ -1,17 +1,47 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable no-param-reassign */
-import * as ts from './vnode';
 import { VNode, evalVNode, VNodeText } from './target-web';
 import { diffObject, minimalEditSequence } from '@/utils';
 
-export type ActionChangeText = ts.ActionChange<'text', Node>;
-export type ActionChangeStyle = ts.ActionChange<'style', Node>;
-export type ActionChangeEvent = ts.ActionChange<'event', Node>;
+/* diff-patch actions */
 
-export type ActionChange = ActionChangeText | ActionChangeStyle | ActionChangeEvent;
-export type ActionDelete = ts.ActionDelete<Node[]>;
-export type ActionInsert = ts.ActionInsert<Node, Node[]>;
+export type ActionChangeDetail = 'text' | 'style' | 'event';
+
+export type ActionChangeTextValue = string;
+export type ActionChangeStyleValue = { [key: string]: string | undefined };
+export type ActionChangeEventValue = { [key: string]: [EventListener | undefined, EventListener | undefined] }; // [old]
+
+type GetActionChangeValue<Detail extends ActionChangeDetail> = Detail extends 'text'
+  ? ActionChangeTextValue
+  : Detail extends 'style'
+    ? ActionChangeStyleValue
+    : Detail extends 'event'
+      ? ActionChangeEventValue
+      : never;
+
+export type ActionChange<Detail extends ActionChangeDetail = ActionChangeDetail> = {
+  type: 'change',
+  detail: Detail,
+  value: GetActionChangeValue<Detail>,
+  target: Node,
+};
+
+export type ActionDelete = {
+  type: 'delete',
+  target: Node[], // nodes to delete
+};
+
+export type ActionInsert = {
+  type: 'insert',
+  index: number,
+  target: Node, // parentElement
+  value: Node[]
+};
+
+export type ActionChangeText = ActionChange<'text'>;
+export type ActionChangeStyle = ActionChange<'style'>;
+export type ActionChangeEvent = ActionChange<'event'>;
 
 export type PatchAction = ActionChange | ActionDelete | ActionInsert;
 
@@ -57,11 +87,11 @@ export function doDelete(action: ActionDelete) {
 export function doChange(action: ActionChange) {
   switch (action.detail) {
     case 'text':
-      return doChangeText(action);
+      return doChangeText(action as ActionChangeText);
     case 'style':
-      return doChangeStyle(action);
+      return doChangeStyle(action as ActionChangeStyle);
     case 'event':
-      return doChangeEvent(action);
+      return doChangeEvent(action as ActionChangeEvent);
     default:
       throw new Error(`Unknown action: ${action}`);
   }

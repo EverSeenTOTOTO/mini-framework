@@ -27,7 +27,7 @@ it('test emitVNode', () => {
         onClick: () => console.log('hello world'),
       },
     ),
-  ]));
+  ]), c.createContext());
 
   expect(insts).toEqual(
     [
