@@ -228,6 +228,20 @@ it('test diffPatchText', () => {
   expect(source.output![0].nodeValue).toBe('World');
 });
 
+it('test diffPatchComponent', () => {
+  const source = h.h(() => h.div(['Hello']));
+  const target = h.h(() => h.div(['World']));
+
+  h.evalVNode(source);
+  document.body.append(...source.output!);
+
+  const actions = web.diffPatchComponent(source, target);
+
+  actions.forEach(web.doAction);
+
+  expect(getByText(document.body, 'World')).not.toBeNull();
+});
+
 it('test diffPatchAttributes', () => {
   const source = h.button(['Click'], {
     style: { width: 300, height: 200, color: 'blue' },

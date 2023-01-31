@@ -1,10 +1,9 @@
 interface VNodeBase<T, Tag extends string> {
   tag: Tag,
-  output?: T
+  output?: T,
 }
 
 export interface VNodeFragment<T> extends VNodeBase<T, 'fragment'> {
-  attr: undefined,
   children: VNode<T>[],
 }
 
@@ -37,7 +36,13 @@ export interface VNodeButton<T> extends VNodeBase<T, 'button'> {
   children: VNode<T>[],
 }
 
-export type VNode<T> = VNodeFragment<T> | VNodeText<T> | VNodeDiv<T> | VNodeButton<T>;
+export interface VNodeComponent<T> extends VNodeBase<T, 'component'> {
+  vdom?: VNode<T>,
+  component: (state?: unknown) => VNode<T>,
+  state?: unknown
+}
+
+export type VNode<T> = VNodeFragment<T> | VNodeText<T> | VNodeDiv<T> | VNodeButton<T> | VNodeComponent<T>;
 
 // map string to VNodeText, convenient to creae plain text nodes
 const mapVNode = <T>(x: VNode<T> | string) => (typeof x === 'string' ? { tag: 'text', text: x } : x);
@@ -67,3 +72,9 @@ export const createElement = <T, Tag extends VNodeTags<T>>(tag: Tag) => (childre
 export const fragment = createElement('fragment');
 export const div = createElement('div');
 export const button = createElement('button');
+
+export const h = <T>(component: (state: unknown) => VNode<T>, state?: unknown): VNodeComponent<T> => ({
+  tag: 'component',
+  component,
+  state,
+});

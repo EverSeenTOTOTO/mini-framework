@@ -3,7 +3,7 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import alias from '@rollup/plugin-alias';
 import json from '@rollup/plugin-json';
-import { terser } from 'rollup-plugin-terser';
+// import { terser } from 'rollup-plugin-terser';
 import path from 'path';
 
 const extensions = ['.mjs', '.js', '.ts', '.json', '.node'];
@@ -13,7 +13,6 @@ const opts = {
     alias({
       entries: [
         { find: '@', replacement: path.resolve(__dirname, 'src') },
-        { find: '@test', replacement: path.resolve(__dirname, 'src/__tests__') },
       ],
     }),
     resolve({
@@ -24,10 +23,10 @@ const opts = {
       babelHelpers: 'runtime',
       extensions,
     }),
-    terser({
-      mangle: true,
-      compress: true,
-    }),
+    // terser({
+    //   mangle: true,
+    //   compress: true,
+    // }),
   ],
 };
 

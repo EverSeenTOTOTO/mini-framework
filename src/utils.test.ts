@@ -1,11 +1,4 @@
-import { Edition, flattern, minimalEditSequence } from '@/utils';
-
-it('test flatten', () => {
-  expect(flattern([])).toEqual([]);
-  expect(flattern([1])).toEqual([1]);
-  expect(flattern([1, [2, 3]])).toEqual([1, 2, 3]);
-  expect(flattern([1, [2, [3]]])).toEqual([1, 2, 3]);
-});
+import { Edition, minimalEditSequence } from '@/utils';
 
 it('test editSequence', () => {
   expect(minimalEditSequence([], [])).toEqual([]);

@@ -1,17 +1,25 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable no-param-reassign */
 import * as ts from './vnode';
-import { flattern } from '@/utils';
+import { flatten } from '@/utils';
 
 export type VNodeFragment = ts.VNodeFragment<Node[]>;
 export type VNodeText = ts.VNodeText<Node[]>;
 export type VNodeDiv = ts.VNodeDiv<Node[]>;
 export type VNodeButton = ts.VNodeButton<Node[]>;
+export type VNodeComponent = ts.VNodeComponent<Node[]>;
 
 export type VNode = ts.VNode<Node[]>;
 
 export const fragment = ts.createElement<Node[], 'fragment'>('fragment');
 export const div = ts.createElement<Node[], 'div'>('div');
 export const button = ts.createElement<Node[], 'button'>('button');
+
+export const h = (component: (state: unknown) => VNode, state?: unknown): VNodeComponent => ({
+  tag: 'component',
+  component,
+  state,
+});
 
 export function evalVNode(node: VNode) {
   switch (node.tag) {
@@ -23,13 +31,15 @@ export function evalVNode(node: VNode) {
       return evalDiv(node);
     case 'button':
       return evalButton(node);
+    case 'component':
+      return evalComponent(node);
     default:
       throw new Error(`Unknown node: ${JSON.stringify(node, null, 2)}`);
   }
 }
 
 function evalSeq(nodes: VNode[]) {
-  return flattern(nodes.map(evalVNode)) as Node[]; // flattern
+  return flatten(nodes.map(evalVNode)) as Node[]; // flattern
 }
 
 let id = 0;
@@ -100,4 +110,21 @@ export function evalButton(node: VNodeButton) {
   node.output = [btn];
 
   return btn;
+}
+
+export function compileComponent(node: VNodeComponent) {
+  const vdom = node.component(node.state);
+
+  node.vdom = vdom;
+}
+
+export function evalComponent(node: VNodeComponent) {
+  compileComponent(node);
+
+  const vdom = node.vdom!;
+
+  evalVNode(vdom);
+  node.output = vdom.output;
+
+  return vdom.output!;
 }

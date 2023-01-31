@@ -2,36 +2,43 @@
 
 <body>
   <script src="./dist/vue.js"></script>
+  <script src="./dist/react.js"></script>
   <script>
     const canvas = document.createElement('canvas');
 
     canvas.width = 800;
     canvas.height = 400;
 
-    document.body.append(canvas);
+    // document.body.append(canvas);
   </script>
   <script>
-    const {fragment, div, button} = window.Vue;
+    const {div, button, h, render} = window.Vue;
 
-    const component = (state) => fragment([
-      div(
-        [state.text],
+    const Counter = (state) => div([`Clicked ${state.count}`], {
+      style: {
+        width: 300,
+        height: 50,
+        color: state.color,
+        bgColor: '#e4e4e4'
+      },
+    });
+
+    const state = {count: 0};
+
+    const App = () => div([ // h('div',
+      h(Counter, state),
+      button( // h('button',
+        ['Click Me'],
         {
-          style: {
-            width: 300,
-            height: 50,
-            color: state.color,
-            bgColor: '#e4e4e4'
+          onClick: () => {
+            state.count += 1;
+            render(h(App), document.body); // 手动触发重绘
           },
         },
       ),
-      button(
-        ['Click Me'],
-        {
-          onClick: state.onClick,
-        },
-      ),
     ]);
+
+    render(h(App), document.body);
   </script>
   <script>
     // const {render} = window.Vue;
@@ -49,23 +56,5 @@
     // }
 
     // setTimeout(() => render(component(state), document.body), 4000);
-  </script>
-  <script>
-    const {render} = window.Vue;
-
-    let state = {
-      text: "Hello World",
-      color: 'blue',
-      onClick: () => console.log("clicked")
-    }
-
-    render(component(state), canvas);
-
-    state = {
-      text: "Frontend Framework",
-      color: 'red',
-    }
-
-    setTimeout(() => render(component(state), canvas), 2000);
   </script>
 </body>

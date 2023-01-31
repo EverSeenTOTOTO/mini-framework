@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable no-param-reassign */
-import { VNode, evalVNode, VNodeText } from './target-web';
+import { VNode, evalVNode, VNodeText, VNodeComponent, compileComponent } from './target-web';
 import { diffObject, minimalEditSequence } from '@/utils';
 
 /* diff-patch actions */
@@ -117,6 +117,9 @@ function doChangeStyle(action: ActionChangeStyle) {
 
 function doChangeEvent(action: ActionChangeEvent) {
   for (const evt of Object.keys(action.value)) {
+    // eslint-disable-next-line no-continue
+    if (!action.value[evt]) continue;
+
     const [oldHandler, newHandler] = action.value[evt];
     const event = evt.toLowerCase().replace(/^on/, ''); // onClick -> click
 
@@ -137,14 +140,19 @@ export function diffPatch(source: VNode, target: VNode) {
     return diffPatchReplace(source, target);
   }
 
-  if (source.tag === 'text' || target.tag === 'text') {
-    return diffPatchText(source, target);
-  }
-
   const actions: PatchAction[] = [];
 
-  actions.push(...diffPatchChildren(source, target));
-  actions.push(...diffPatchAttributes(source, target));
+  if (source.tag === 'text') {
+    actions.push(...diffPatchText(source, target));
+  } else if (source.tag === 'component') {
+    actions.push(...diffPatchComponent(source, target as VNodeComponent));
+  } else {
+    actions.push(...diffPatchChildren(source, target as VNodeWithChildren));
+
+    if (source.tag !== 'fragment') {
+      actions.push(...diffPatchAttributes(source, target as VNodeWithAttr));
+    }
+  }
 
   target.output = source.output;
 
@@ -191,24 +199,36 @@ export function diffPatchText(source: VNode, target: VNode): PatchAction[] {
   return [];
 }
 
-// exclude VNodeText
-type VNodeWrap = VNode extends infer V
-  ? V extends { tag: 'text' }
-    ? never
-    : V
+export function diffPatchComponent(source: VNodeComponent, target: VNodeComponent) {
+  if (!source.vdom) throw new Error('source not initialized');
+
+  compileComponent(target);
+
+  return diffPatch(source.vdom, target.vdom!);
+}
+
+// VNodes that has attr and children
+type VNodeWithAttr = VNode extends infer V
+  ? V extends { attr?: unknown }
+    ? V
+    : never
   : never;
 
-export function diffPatchAttributes(source: VNodeWrap, target: VNodeWrap) {
+export function diffPatchAttributes(source: VNodeWithAttr, target: VNodeWithAttr) {
   const actions: PatchAction[] = [];
 
   diffObject(source.attr ?? {}, target.attr ?? {}, (p, n, o) => {
-    actions.push(changeAttr(source, p, n, o));
+    const action = changeAttr(source, p, n, o);
+
+    if (Object.keys(action.value).length > 0) {
+      actions.push(action);
+    }
   });
 
   return actions;
 }
 
-function changeAttr(source: VNodeWrap, key: string, newValue: any, oldValue: any): ActionChange {
+function changeAttr(source: VNodeWithAttr, key: string, newValue: any, oldValue: any): ActionChange {
   const createStyleValue = () => {
     const result: Record<string, any> = {};
 
@@ -218,7 +238,7 @@ function changeAttr(source: VNodeWrap, key: string, newValue: any, oldValue: any
 
     return result;
   };
-  const createEventValue = () => ({ [key]: [oldValue, newValue] });
+  const createEventValue = () => (oldValue === newValue ? {} : { [key]: [oldValue, newValue] });
 
   return {
     type: 'change',
@@ -232,7 +252,13 @@ function compareVNode(source: VNode, target: VNode) {
   return source.tag === target.tag;
 }
 
-export function diffPatchChildren(source: VNodeWrap, target: VNodeWrap) {
+type VNodeWithChildren = VNode extends infer V
+  ? V extends { children: unknown }
+    ? V
+    : never
+  : never;
+
+export function diffPatchChildren(source: VNodeWithChildren, target: VNodeWithChildren) {
   const editions = minimalEditSequence(source.children, target.children, compareVNode);
   const actions: PatchAction[] = [];
 

@@ -74,6 +74,16 @@ it('test evalFragment', () => {
   expect(document.body.innerHTML).toBe('<!--fragment 0 start--><!--fragment 0 end-->');
 });
 
+it('test evalComponent', () => {
+  const div = w.evalComponent(w.h(() => w.div([
+    w.h(() => w.fragment(['hello world'])),
+  ])));
+
+  document.body.append(...div);
+
+  expect(getByText(document.body, 'hello world')).not.toBeNull();
+});
+
 it('test evalVNode', () => {
   let count = 0;
   const app = w.evalVNode(w.fragment([

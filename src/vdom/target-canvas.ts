@@ -1,6 +1,6 @@
 /* eslint-disable no-param-reassign */
 import * as ts from './vnode';
-import { flattern } from '@/utils';
+import { flatten } from '@/utils';
 
 export type VNodeFragment = ts.VNodeFragment<RenderInst[]>;
 export type VNodeText = ts.VNodeText<RenderInst[]>;
@@ -209,7 +209,7 @@ export function emitInsts(node: VNode, ctx: Context) {
       size: ctx.fontSize,
       family: ctx.fontFamily,
     },
-    ...flattern([emitVNode(node, ctx)]) as RenderInst[],
+    ...flatten([emitVNode(node, ctx)]) as RenderInst[],
   ];
 
   node.output = insts;
@@ -233,7 +233,7 @@ function emitVNode(node: VNode, ctx: Context) {
 }
 
 function emitSeq(nodes: VNode[], ctx: Context) {
-  return flattern(nodes.map((n) => emitVNode(n, ctx))) as RenderInst[];
+  return flatten(nodes.map((n) => emitVNode(n, ctx))) as RenderInst[];
 }
 
 let id = 0;

@@ -1,6 +1,7 @@
-export const flattern = (arr: unknown[]): unknown[] => {
-  return arr.reduce((p: unknown[], c) => [...p, ...Array.isArray(c) ? flattern(c) : [c]], []);
-};
+import flatten from 'lodash.flatten';
+import deepEqualsTo from 'lodash.isequal';
+
+export { flatten, deepEqualsTo };
 
 export const diffObject = <O extends Record<string, unknown>>(source: O, target: O, callback: (p: string, newValue: unknown, oldValue: unknown) => void) => {
   const sourceProps = Object.keys(source);
@@ -31,9 +32,9 @@ type EditionInternal<T> = {
   target?: T,
   action: 'delete' | 'insert' | 'keep',
 };
+
 export type Edition<T> = (EditionInternal<T> & { index: number });
 
-const basicCompare = <T>(a: T, b: T) => a === b;
 const formatIndex = <T>(es: EditionInternal<T>[]): Edition<T>[] => {
   let index = 0;
 
@@ -54,7 +55,7 @@ const formatIndex = <T>(es: EditionInternal<T>[]): Edition<T>[] => {
   });
 };
 
-export const minimalEditSequence = <T>(source: T[], target: T[], compare = basicCompare<T>): Edition<T>[] => {
+export const minimalEditSequence = <T>(source: T[], target: T[], compare = deepEqualsTo): Edition<T>[] => {
   if (source.length === 0) {
     return formatIndex(target.map((value) => ({ target: value, action: 'insert' })));
   } if (target.length === 0) {
