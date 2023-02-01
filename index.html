@@ -3,16 +3,18 @@
 <body>
   <script src="./dist/vue.js"></script>
   <script src="./dist/react.js"></script>
+  <div id="react"></div>
+  <div id="vue"></div>
   <script>
-    const canvas = document.createElement('canvas');
+    // const canvas = document.createElement('canvas');
 
-    canvas.width = 800;
-    canvas.height = 400;
+    // canvas.width = 800;
+    // canvas.height = 400;
 
     // document.body.append(canvas);
   </script>
   <script>
-    const {div, button, h, render} = window.Vue;
+    const {div, button, h, createRoot, useState, useEffect} = window.React;
 
     const Counter = (state) => div([`Clicked ${state.count}`], {
       style: {
@@ -23,38 +25,30 @@
       },
     });
 
-    const state = {count: 0};
+    const App = () => {
+      const [count, setCount] = useState(0);
+      const [color, setColor] = useState('blue');
 
-    const App = () => div([ // h('div',
-      h(Counter, state),
-      button( // h('button',
-        ['Click Me'],
-        {
-          onClick: () => {
-            state.count += 1;
-            render(h(App), document.body); // 手动触发重绘
+      useEffect(() => console.log(count), [count]);
+      useEffect(() => console.log(color), []);
+
+      return div([
+        h(Counter, {count, color}),
+        button(
+          ['Increment'],
+          {
+            onClick: () => setCount(count + 1),
           },
-        },
-      ),
-    ]);
+        ),
+        button(
+          ['Change Color'],
+          {
+            onClick: () => setColor(color === 'blue' ? 'red' : 'blue'),
+          },
+        ),
+      ])
+    };
 
-    render(h(App), document.body);
-  </script>
-  <script>
-    // const {render} = window.Vue;
-    // let state = {
-    //   text: "Hello World",
-    //   color: 'blue',
-    // }
-
-    // render(component(state), document.body);
-
-    // state = {
-    //   text: "Frontend Framework",
-    //   color: 'red',
-    //   onClick: () => console.log("clicked")
-    // }
-
-    // setTimeout(() => render(component(state), document.body), 4000);
+    createRoot(document.getElementById('react')).render(h(App));
   </script>
 </body>

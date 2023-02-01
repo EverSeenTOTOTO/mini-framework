@@ -15,11 +15,25 @@ export const fragment = ts.createElement<Node[], 'fragment'>('fragment');
 export const div = ts.createElement<Node[], 'div'>('div');
 export const button = ts.createElement<Node[], 'button'>('button');
 
-export const h = (component: (state: unknown) => VNode, state?: unknown): VNodeComponent => ({
-  tag: 'component',
-  component,
-  state,
-});
+let currentComponent: VNodeComponent;
+export const getCurrentComponent = () => currentComponent;
+
+let hookId = 0;
+export const getCurrentHookId = () => hookId++;
+
+export const h = (component: (state: unknown) => VNode, state?: unknown) => {
+  const vnode: VNodeComponent = {
+    tag: 'component',
+    component: (s?: unknown) => {
+      currentComponent = vnode;
+      hookId = 0;
+      return component(s);
+    },
+    hookState: new Map(),
+    state,
+  };
+  return vnode;
+};
 
 export function evalVNode(node: VNode) {
   switch (node.tag) {
@@ -112,19 +126,12 @@ export function evalButton(node: VNodeButton) {
   return btn;
 }
 
-export function compileComponent(node: VNodeComponent) {
-  const vdom = node.component(node.state);
-
-  node.vdom = vdom;
-}
-
 export function evalComponent(node: VNodeComponent) {
-  compileComponent(node);
-
-  const vdom = node.vdom!;
+  const vdom = node.component(node.state);
 
   evalVNode(vdom);
   node.output = vdom.output;
+  node.vdom = vdom;
 
   return vdom.output!;
 }

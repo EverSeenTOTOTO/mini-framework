@@ -16,8 +16,6 @@
     "@rollup/plugin-node-resolve": "^13.0.0",
     "@testing-library/dom": "^8.20.0",
     "@types/jest": "^28.1.6",
-    "@types/lodash.flatten": "^4.4.7",
-    "@types/lodash.isequal": "^4.5.6",
     "@types/node": "^14.14.10",
     "@typescript-eslint/eslint-plugin": "^5.29.0",
     "@typescript-eslint/parser": "^5.29.0",
@@ -46,9 +44,5 @@
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
     }
-  },
-  "dependencies": {
-    "lodash.flatten": "^4.4.0",
-    "lodash.isequal": "^4.5.0"
   }
 }

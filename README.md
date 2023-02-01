@@ -4,85 +4,49 @@ A minimal implementation for React and Vue, for fun and personal learning.
 
 For more information, read my post [here](https://github.com/EverSeenTOTOTO/frontend-interview/blob/main/Framework.md).
 
-<img src="./VDOM.png" />
+<img src="./VDOM.png" width="600px" />
+
+Example code can be found in [index.html](./index.html).
 
 **React**:
 
-```js
-import React from './dist/react.js';
+```ts
+const {div, button, h, createRoot, useState, useEffect} = window.React;
 
-const { fragment, div, button, useState, useEffect, useRef } = React;
+const Counter = (state) => div([`Clicked ${state.count}`], {
+  style: {
+    width: 300,
+    height: 50,
+    color: state.color,
+    bgColor: '#e4e4e4'
+  },
+});
 
-function Counter() {
-  const [value, setValue] = useState(0);
-  const prev = useRef(value);
+const App = () => {
+  const [count, setCount] = useState(0);
+  const [color, setColor] = useState('blue');
 
-  useEffect(() => {
-    console.log(`oldValue: ${prevValue.current}, newValue: ${value}`);
+  useEffect(() => console.log(count), [count]);
+  useEffect(() => console.log(color), []);
 
-    prev.current = value;
-  }, [value]);
-
-  return fragment([
-    div(
-      [`Count: ${value}`],
-      {
-        style: {
-          width: 300,
-          height: 50,
-          color: 'blue'
-        }
-      }
-    ),
+  return div([
+    h(Counter, {count, color}),
     button(
-      ['Click Me'],
+      ['Increment'],
       {
-        onClick: () => setValue(value + 1)
+        onClick: () => setCount(count + 1),
       },
     ),
-  ]);
-}
+    button(
+      ['Change Color'],
+      {
+        onClick: () => setColor(color === 'blue' ? 'red' : 'blue'),
+      },
+    ),
+  ])
+};
 
-React.render(Counter, document.getElementById("root"));
-```
-
-**Vue**:
-
-```js
-import Vue from './dist/vue.js';
-
-const { fragment, div, button, ref, watch } = Vue;
-
-const Counter = {
-  setup() {
-    const count = ref(0);
-
-    watch(count, (newVal, oldVal) => {
-      console.log(`oldValue: ${oldVal}, newValue: ${newVal}`);
-    });
-
-    return fragment([
-      div(
-        [`Count: ${count.value}`],
-        {
-          style: {
-            width: 300,
-            height: 50,
-            color: 'blue'
-          }
-        }
-      ),
-      button(
-        ['Click Me'],
-        {
-          onClick: () => { count.value += 1 }
-        },
-      ),
-    ]);
-  }
-}
-
-Vue.render(Counter, document.getElementById("root"));
+createRoot(document.getElementById('react')).render(h(App));
 ```
 
 ## Targets

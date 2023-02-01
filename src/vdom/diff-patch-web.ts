@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable no-param-reassign */
-import { VNode, evalVNode, VNodeText, VNodeComponent, compileComponent } from './target-web';
+import { VNode, evalVNode, VNodeText, VNodeComponent } from './target-web';
 import { diffObject, minimalEditSequence } from '@/utils';
 
 /* diff-patch actions */
@@ -135,6 +135,12 @@ function doChangeEvent(action: ActionChangeEvent) {
 
 /* naive diff patch algorithm */
 
+export function diffPatchRender(oldVNode: VNode, newVNode: VNode) {
+  const actions = diffPatch(oldVNode, newVNode);
+
+  actions.forEach((action) => doAction(action));
+}
+
 export function diffPatch(source: VNode, target: VNode) {
   if (source.tag !== target.tag) {
     return diffPatchReplace(source, target);
@@ -199,12 +205,16 @@ export function diffPatchText(source: VNode, target: VNode): PatchAction[] {
   return [];
 }
 
+// source can be === to target, see useState
 export function diffPatchComponent(source: VNodeComponent, target: VNodeComponent) {
   if (!source.vdom) throw new Error('source not initialized');
 
-  compileComponent(target);
+  const vdom = target.component(target.state);
+  const actions = diffPatch(source.vdom, vdom);
 
-  return diffPatch(source.vdom, target.vdom!);
+  target.vdom = vdom;
+
+  return actions;
 }
 
 // VNodes that has attr and children

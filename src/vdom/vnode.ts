@@ -36,10 +36,14 @@ export interface VNodeButton<T> extends VNodeBase<T, 'button'> {
   children: VNode<T>[],
 }
 
+export type UseStateHookState = { type: 'useState', state: unknown, dirty: boolean };
+export type UseEffectHookState = { type: 'useEffect', clearEffect?: () => void };
+
 export interface VNodeComponent<T> extends VNodeBase<T, 'component'> {
   vdom?: VNode<T>,
   component: (state?: unknown) => VNode<T>,
-  state?: unknown
+  state?: unknown,
+  hookState: Map<number, UseStateHookState | UseEffectHookState>,
 }
 
 export type VNode<T> = VNodeFragment<T> | VNodeText<T> | VNodeDiv<T> | VNodeButton<T> | VNodeComponent<T>;
@@ -68,13 +72,3 @@ export const createElement = <T, Tag extends VNodeTags<T>>(tag: Tag) => (childre
   attr,
   children: children.map(mapVNode),
 } as GetVNodeType<T, Tag>);
-
-export const fragment = createElement('fragment');
-export const div = createElement('div');
-export const button = createElement('button');
-
-export const h = <T>(component: (state: unknown) => VNode<T>, state?: unknown): VNodeComponent<T> => ({
-  tag: 'component',
-  component,
-  state,
-});
