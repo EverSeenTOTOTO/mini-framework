@@ -1,52 +1,30 @@
 # mini-framework
 
-A minimal implementation for React and Vue, for fun and personal learning.
+A minimal (915 lines of code excluding tests) implementation for React and Vue, for fun and personal learning.
 
-For more information, read my post [here](https://github.com/EverSeenTOTOTO/frontend-interview/blob/main/Framework.md).
+For more information, read my post [here](https://github.com/EverSeenTOTOTO/frontend-interview/blob/main/Framework.md). Example usages can be found in [samle](./sample) folder.
 
-<img src="./VDOM.png" width="600px" />
-
-Example code can be found in [index.html](./index.html).
-
-**React**:
+**Crazy mind**:
 
 ```ts
-const {div, button, h, createRoot, useState, useEffect} = window.React;
+const counter = {
+  setup() {
+    const ref = vue.ref(1);
 
-const Counter = (state) => div([`Clicked ${state.count}`], {
-  style: {
-    width: 300,
-    height: 50,
-    color: state.color,
-    bgColor: '#e4e4e4'
+    vue.watch(ref, (n) => console.log(n));
+
+    return () => {
+      const [count, setCount] = react.useState(ref.value * 2);
+
+      react.useEffect(() => fn(count), [count]);
+
+      return w.fragment([
+        w.button(['Click Vue'], { onClick: () => { ref.value += 1; } }),
+        w.button(['Click React'], { onClick: () => setCount(count + 1) }),
+      ]);
+    };
   },
-});
-
-const App = () => {
-  const [count, setCount] = useState(0);
-  const [color, setColor] = useState('blue');
-
-  useEffect(() => console.log(count), [count]);
-  useEffect(() => console.log(color), []);
-
-  return div([
-    h(Counter, {count, color}),
-    button(
-      ['Increment'],
-      {
-        onClick: () => setCount(count + 1),
-      },
-    ),
-    button(
-      ['Change Color'],
-      {
-        onClick: () => setColor(color === 'blue' ? 'red' : 'blue'),
-      },
-    ),
-  ])
 };
-
-createRoot(document.getElementById('react')).render(h(App));
 ```
 
 ## Targets

@@ -9,6 +9,8 @@ export type VNodeDiv = ts.VNodeDiv<Node[]>;
 export type VNodeButton = ts.VNodeButton<Node[]>;
 export type VNodeComponent = ts.VNodeComponent<Node[]>;
 
+export type VueComponentDefine = ts.VueComponentDefine<Node[]>;
+
 export type VNode = ts.VNode<Node[]>;
 
 export const fragment = ts.createElement<Node[], 'fragment'>('fragment');
@@ -18,21 +20,31 @@ export const button = ts.createElement<Node[], 'button'>('button');
 let currentComponent: VNodeComponent;
 export const getCurrentComponent = () => currentComponent;
 
-let hookId = 0;
-export const getCurrentHookId = () => hookId++;
+let currentHookId = 0;
+export const getCurrentHookId = () => currentHookId++;
 
-export const h = (component: (state: unknown) => VNode, state?: unknown) => {
-  const vnode: VNodeComponent = {
+export const h = (component: ((state: unknown) => VNode) | VueComponentDefine, state?: unknown) => {
+  const vnode: Partial<VNodeComponent> = {
     tag: 'component',
-    component: (s?: unknown) => {
-      currentComponent = vnode;
-      hookId = 0;
-      return component(s);
-    },
-    hookState: new Map(),
-    state,
+    reactHookStates: new Map(),
+    vueHookStates: new WeakMap(),
   };
-  return vnode;
+
+  if ('setup' in component) { // vue component
+    // order matters, setup() will call vue hooks,
+    // which will fetch currentComponent
+    currentComponent = vnode as VNodeComponent;
+    vnode.component = component.setup();
+  } else { // react component
+    vnode.state = state;
+    vnode.component = (s?: unknown) => {
+      currentComponent = vnode as VNodeComponent;
+      currentHookId = 0;
+      return component(s); // will call react hooks, which will fetch currentComponent and currentHookId
+    };
+  }
+
+  return vnode as VNodeComponent;
 };
 
 export function evalVNode(node: VNode) {

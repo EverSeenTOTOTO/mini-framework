@@ -229,8 +229,30 @@ it('test diffPatchText', () => {
 });
 
 it('test diffPatchComponent', () => {
-  const source = h.h(() => h.div(['Hello']));
-  const target = h.h(() => h.div(['World']));
+  const source = h.h(() => h.div(['Hello'])) as h.VNodeComponent;
+  const target = h.h(() => h.div(['World'])) as h.VNodeComponent;
+
+  h.evalVNode(source);
+  document.body.append(...source.output!);
+
+  const actions = web.diffPatchComponent(source, target);
+
+  actions.forEach(web.doAction);
+
+  expect(getByText(document.body, 'World')).not.toBeNull();
+});
+
+it('test diffPatchComponent vue', () => {
+  const source = h.h({
+    setup() {
+      return () => h.div(['Hello']);
+    },
+  });
+  const target = h.h({
+    setup() {
+      return () => h.div(['World']);
+    },
+  });
 
   h.evalVNode(source);
   document.body.append(...source.output!);

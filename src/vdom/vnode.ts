@@ -39,12 +39,19 @@ export interface VNodeButton<T> extends VNodeBase<T, 'button'> {
 export type UseStateHookState = { type: 'useState', state: unknown, dirty: boolean };
 export type UseEffectHookState = { type: 'useEffect', clearEffect?: () => void };
 
+export type Effect<T> = (newValue: T, oldValue: T) => void;
+
 export interface VNodeComponent<T> extends VNodeBase<T, 'component'> {
-  vdom?: VNode<T>,
+  vdom?: VNode<T>, // compiled vdom
   component: (state?: unknown) => VNode<T>,
   state?: unknown,
-  hookState: Map<number, UseStateHookState | UseEffectHookState>,
+  reactHookStates: Map<number, UseStateHookState | UseEffectHookState>,
+  vueHookStates: WeakMap<object, Effect<unknown>[]>
 }
+
+export type VueComponentDefine<T> = {
+  setup: () => () => VNode<T>,
+};
 
 export type VNode<T> = VNodeFragment<T> | VNodeText<T> | VNodeDiv<T> | VNodeButton<T> | VNodeComponent<T>;
 

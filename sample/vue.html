@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+
+<body>
+  <script src="../dist/vue.js"></script>
+  <script>
+    const {div, button, fragment, h, ref, watch, createApp} = window.Vue;
+
+    const Counter = (state) => div([`Clicked ${state.count}`], {
+      style: {
+        width: 300,
+        height: 50,
+        color: state.color,
+        bgColor: '#e4e4e4'
+      },
+    });
+
+    const App = {
+      setup() {
+        const count = ref(0);
+        const color = ref('blue');
+
+        watch(count, (n) => console.log(`Vue Counter: ${n}`));
+
+        return () => div([
+          h(Counter, {count: count.value, color: color.value}),
+          button(
+            ['Increment'],
+            {
+              onClick: () => {count.value += 1;},
+            },
+          ),
+          button(
+            ['Change Color'],
+            {
+              onClick: () => {color.value = color.value === 'blue' ? 'red' : 'blue'},
+            },
+          ),
+        ])
+      }
+    };
+
+    createApp(h(App)).mount(document.body);
+  </script>
+</body>

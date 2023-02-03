@@ -84,6 +84,22 @@ it('test evalComponent', () => {
   expect(getByText(document.body, 'hello world')).not.toBeNull();
 });
 
+it('test evalComponent vue', () => {
+  const div = w.evalComponent(w.h({
+    setup() {
+      return () => w.h({
+        setup() {
+          return () => w.fragment(['hello world']);
+        },
+      });
+    },
+  }));
+
+  document.body.append(...div);
+
+  expect(getByText(document.body, 'hello world')).not.toBeNull();
+});
+
 it('test evalVNode', () => {
   let count = 0;
   const app = w.evalVNode(w.fragment([

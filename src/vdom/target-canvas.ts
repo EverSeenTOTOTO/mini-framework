@@ -173,10 +173,12 @@ export type Context = {
   fontSize: number
   fontFamily: string,
   eventListeners: ({ event: string, callback: EventListenerOrEventListenerObject })[]
+  canvas: HTMLCanvasElement,
 };
 
-export function createContext(): Context {
+export function createContext(canvas: HTMLCanvasElement): Context {
   return {
+    canvas,
     x: 0,
     y: 0,
     fontSize: 16,
@@ -185,12 +187,12 @@ export function createContext(): Context {
   };
 }
 
-export function resetContext(canvas: HTMLCanvasElement, ctx: Context) {
+export function resetContext(ctx: Context) {
   ctx.x = 0;
   ctx.y = 0;
   ctx.fontSize = 16;
   ctx.fontFamily = 'sans-serif';
-  ctx.eventListeners.forEach((each) => canvas.removeEventListener(each.event, each.callback));
+  ctx.eventListeners.forEach((each) => ctx.canvas?.removeEventListener(each.event, each.callback));
   ctx.eventListeners = [];
 }
 
@@ -268,7 +270,7 @@ export function emitText(node: VNodeText, ctx: Context) {
 }
 
 // should obey the css flow rules, compute width top-down and compute height bottom-up,
-// here we assume that the width and height are computed and always available in node.
+// here we assume that the width and height are already computed and always available in node.
 export function emitDiv(node: VNodeDiv, ctx: Context): RenderInst[] {
   const insts: RenderInst[] = [];
   const style = {
@@ -362,7 +364,7 @@ export function emitButton(node: VNodeButton, ctx: Context): RenderInst[] {
     });
   }
 
-  insts.push(...emitSeq(node.children, ctx)); // 递归下降
+  insts.push(...emitSeq(node.children, ctx)); // recursive descent
 
   if (node.attr?.onClick) {
     bindCanvasClick(node.attr.onClick, style, ctx);
@@ -376,11 +378,6 @@ export function emitButton(node: VNodeButton, ctx: Context): RenderInst[] {
 }
 
 function bindCanvasClick(cb: (e: MouseEvent) => void, style: Required<ts.AttrStyle>, ctx: Context) {
-  // suppose there is only one canvas on document
-  const canvas = document.querySelector('canvas');
-
-  if (!canvas) throw new Error('Cannot bind canvas click, canvas element not found');
-
   const callback: EventListenerOrEventListenerObject = (evt: Event) => {
     const e = evt as MouseEvent;
 
@@ -393,6 +390,6 @@ function bindCanvasClick(cb: (e: MouseEvent) => void, style: Required<ts.AttrSty
     }
   };
 
-  canvas.addEventListener('click', callback);
+  ctx.canvas.addEventListener('click', callback);
   ctx.eventListeners.push({ event: 'click', callback });
 }

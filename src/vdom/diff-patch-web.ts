@@ -10,7 +10,7 @@ export type ActionChangeDetail = 'text' | 'style' | 'event';
 
 export type ActionChangeTextValue = string;
 export type ActionChangeStyleValue = { [key: string]: string | undefined };
-export type ActionChangeEventValue = { [key: string]: [EventListener | undefined, EventListener | undefined] }; // [old]
+export type ActionChangeEventValue = { [key: string]: [EventListener | undefined, EventListener | undefined] }; // [old, new]
 
 type GetActionChangeValue<Detail extends ActionChangeDetail> = Detail extends 'text'
   ? ActionChangeTextValue

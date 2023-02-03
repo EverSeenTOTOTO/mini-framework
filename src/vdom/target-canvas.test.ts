@@ -4,8 +4,10 @@
 
 import * as c from './target-canvas';
 
+let canvas: HTMLCanvasElement;
 beforeAll(() => {
-  document.body.append(document.createElement('canvas'));
+  canvas = document.createElement('canvas');
+  document.body.append(canvas);
 });
 
 it('test emitVNode', () => {
@@ -27,7 +29,7 @@ it('test emitVNode', () => {
         onClick: () => console.log('hello world'),
       },
     ),
-  ]), c.createContext());
+  ]), c.createContext(canvas));
 
   expect(insts).toEqual(
     [

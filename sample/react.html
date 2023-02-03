@@ -1,20 +1,9 @@
 <!DOCTYPE html>
 
 <body>
-  <script src="./dist/vue.js"></script>
-  <script src="./dist/react.js"></script>
-  <div id="react"></div>
-  <div id="vue"></div>
+  <script src="../dist/react.js"></script>
   <script>
-    // const canvas = document.createElement('canvas');
-
-    // canvas.width = 800;
-    // canvas.height = 400;
-
-    // document.body.append(canvas);
-  </script>
-  <script>
-    const {div, button, h, createRoot, useState, useEffect} = window.React;
+    const {div, button, fragment, h, createRoot, useState, useEffect} = window.React;
 
     const Counter = (state) => div([`Clicked ${state.count}`], {
       style: {
@@ -29,8 +18,7 @@
       const [count, setCount] = useState(0);
       const [color, setColor] = useState('blue');
 
-      useEffect(() => console.log(count), [count]);
-      useEffect(() => console.log(color), []);
+      useEffect(() => console.log(`React Counter: ${count}`), [count]);
 
       return div([
         h(Counter, {count, color}),
@@ -49,6 +37,6 @@
       ])
     };
 
-    createRoot(document.getElementById('react')).render(h(App));
+    createRoot(document.body).render(h(App));
   </script>
 </body>

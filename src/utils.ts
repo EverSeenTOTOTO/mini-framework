@@ -53,6 +53,7 @@ const formatIndex = <T>(es: EditionInternal<T>[]): Edition<T>[] => {
   });
 };
 
+// inefficient
 export const minimalEditSequence = <T>(source: T[], target: T[], compare = (a: T, b: T) => a === b): Edition<T>[] => {
   if (source.length === 0) {
     return formatIndex(target.map((value) => ({ target: value, action: 'insert' })));
