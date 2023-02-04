@@ -229,13 +229,14 @@ it('test diffPatchText', () => {
 });
 
 it('test diffPatchComponent', () => {
-  const source = h.h(() => h.div(['Hello'])) as h.VNodeComponent;
-  const target = h.h(() => h.div(['World'])) as h.VNodeComponent;
+  const state = { msg: 'Hello' };
+  const source = h.h(() => h.div([state.msg])) as h.VNodeComponent;
 
   h.evalVNode(source);
   document.body.append(...source.output!);
 
-  const actions = web.diffPatchComponent(source, target);
+  state.msg = 'World';
+  const actions = web.diffPatchComponent(source, source);
 
   actions.forEach(web.doAction);
 
@@ -243,21 +244,18 @@ it('test diffPatchComponent', () => {
 });
 
 it('test diffPatchComponent vue', () => {
+  const state = { msg: 'Hello' };
   const source = h.h({
     setup() {
-      return () => h.div(['Hello']);
-    },
-  });
-  const target = h.h({
-    setup() {
-      return () => h.div(['World']);
+      return () => h.div([state.msg]);
     },
   });
 
   h.evalVNode(source);
   document.body.append(...source.output!);
 
-  const actions = web.diffPatchComponent(source, target);
+  state.msg = 'World';
+  const actions = web.diffPatchComponent(source, source);
 
   actions.forEach(web.doAction);
 

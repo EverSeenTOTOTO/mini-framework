@@ -117,9 +117,6 @@ function doChangeStyle(action: ActionChangeStyle) {
 
 function doChangeEvent(action: ActionChangeEvent) {
   for (const evt of Object.keys(action.value)) {
-    // eslint-disable-next-line no-continue
-    if (!action.value[evt]) continue;
-
     const [oldHandler, newHandler] = action.value[evt];
     const event = evt.toLowerCase().replace(/^on/, ''); // onClick -> click
 
@@ -138,7 +135,7 @@ function doChangeEvent(action: ActionChangeEvent) {
 export function diffPatchRender(oldVNode: VNode, newVNode: VNode) {
   const actions = diffPatch(oldVNode, newVNode);
 
-  actions.forEach((action) => doAction(action));
+  actions.forEach(doAction);
 }
 
 export function diffPatch(source: VNode, target: VNode) {
@@ -160,6 +157,7 @@ export function diffPatch(source: VNode, target: VNode) {
     }
   }
 
+  // actions operate on source.output, by setting target.output === source.output we reuse the DOM node
   target.output = source.output;
 
   return actions;
@@ -205,13 +203,16 @@ export function diffPatchText(source: VNode, target: VNode): PatchAction[] {
   return [];
 }
 
-// source can be === to target, see useState
 export function diffPatchComponent(source: VNodeComponent, target: VNodeComponent) {
   if (!source.vdom) throw new Error('source not initialized');
+
+  target.reactHookStates = source.reactHookStates;
+  target.vueHookStates = source.vueHookStates;
 
   const vdom = target.component(target.state);
   const actions = diffPatch(source.vdom, vdom);
 
+  // source can be === to target, see hooks, so we can't move this statement up
   target.vdom = vdom;
 
   return actions;

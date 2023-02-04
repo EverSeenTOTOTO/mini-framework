@@ -67,18 +67,19 @@ it('test crazy', () => {
   const fn = jest.fn();
   const counter = {
     setup() {
-      const ref = vue.ref(1);
+      const ref = vue.ref(0);
 
-      vue.watch(ref, (n) => console.log(n));
+      vue.watch(ref, (n) => console.log(`Outside: ${n}`));
 
       return () => {
-        const [count, setCount] = react.useState(ref.value * 2);
+        const [count, setCount] = react.useState(ref.value);
 
-        react.useEffect(() => fn(count), [count]);
+        react.useEffect(() => fn([ref.value, count]), [count]);
 
         return w.fragment([
-          w.button(['Click Vue'], { onClick: () => { ref.value += 1; } }),
-          w.button(['Click React'], { onClick: () => setCount(count + 1) }),
+          w.div([`${ref.value}`, `${count}`]),
+          w.button(['Outside'], { onClick: () => { ref.value += 1; } }),
+          w.button(['Inside'], { onClick: () => setCount(count + 1) }),
         ]);
       };
     },
@@ -86,18 +87,18 @@ it('test crazy', () => {
 
   vue.createApp(w.h(counter)).mount(document.body);
 
-  expect(fn).toHaveBeenCalledWith(2);
+  expect(fn).toHaveBeenCalledWith([0, 0]);
 
-  const btnVue = getByText(document.body, 'Click Vue');
-  const btnReact = getByText(document.body, 'Click React');
+  const btnOutside = getByText(document.body, 'Outside');
+  const btnInside = getByText(document.body, 'Inside');
+
+  btnOutside.click();
+  btnOutside.click();
+  btnOutside.click();
+  btnInside.click();
+  expect(fn).toHaveBeenCalledWith([3, 1]);
 
   fn.mockClear();
-  btnVue.click();
-  expect(fn).toHaveBeenCalledWith(4);
-
-  fn.mockClear();
-  btnReact.click();
-  btnReact.click();
-  btnReact.click();
-  expect(fn).toHaveBeenCalledWith(4);
+  btnInside.click();
+  expect(fn).toHaveBeenCalledWith([3, 2]);
 });

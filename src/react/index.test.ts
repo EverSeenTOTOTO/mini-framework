@@ -33,6 +33,43 @@ it('test useState', () => {
   expect(getByText(btn, '2')).not.toBeNull();
 });
 
+it('test useState nested', () => {
+  const inner = (init: unknown) => {
+    const [count, setCount] = react.useState(init as number);
+
+    react.useEffect(() => console.log(init), [init]);
+
+    return w.fragment([
+      w.div([`${count}`]),
+      w.button(['Inner'], {
+        onClick: () => setCount(count + 1),
+      })]);
+  };
+  const outer = () => {
+    const [count, setCount] = react.useState(0);
+
+    return w.fragment([
+      w.h(inner, count),
+      w.button(['Outer'], {
+        onClick: () => setCount(count + 1),
+      })]);
+  };
+
+  render(w.h(outer));
+
+  const btnInside = getByText(document.body, 'Inner');
+  const btnOutside = getByText(document.body, 'Outer');
+
+  btnOutside.click();
+  btnOutside.click();
+  btnOutside.click();
+  expect(getByText(document.body, '0')).not.toBeNull();
+  btnInside.click();
+  expect(getByText(document.body, '1')).not.toBeNull();
+  btnInside.click();
+  expect(getByText(document.body, '2')).not.toBeNull();
+});
+
 it('test useEffect', () => {
   const triggerOnEach = jest.fn();
   const triggerOnce = jest.fn();

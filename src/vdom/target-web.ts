@@ -34,13 +34,21 @@ export const h = (component: ((state: unknown) => VNode) | VueComponentDefine, s
     // order matters, setup() will call vue hooks,
     // which will fetch currentComponent
     currentComponent = vnode as VNodeComponent;
-    vnode.component = component.setup();
+    const render = component.setup();
+
+    vnode.component = () => {
+      // for react hooks
+      currentComponent = vnode as VNodeComponent;
+      currentHookId = 0;
+      return render(); // will call react hooks
+    };
   } else { // react component
     vnode.state = state;
     vnode.component = (s?: unknown) => {
+      // for react hooks
       currentComponent = vnode as VNodeComponent;
       currentHookId = 0;
-      return component(s); // will call react hooks, which will fetch currentComponent and currentHookId
+      return component(s); // will call react hooks
     };
   }
 

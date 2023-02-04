@@ -1,30 +1,35 @@
 # mini-framework
 
-A minimal (915 lines of code excluding tests) implementation for React and Vue, for fun and personal learning.
+A minimal (<1000 lines of code excluding tests) implementation for React and Vue, for fun and personal learning.
 
 For more information, read my post [here](https://github.com/EverSeenTOTOTO/frontend-interview/blob/main/Framework.md). Example usages can be found in [samle](./sample) folder.
 
 **Crazy mind**:
 
 ```ts
+const {div, button, fragment, h, vue, react} = window.Crazy;
+
 const counter = {
   setup() {
-    const ref = vue.ref(1);
+    const ref = vue.ref(0);
 
-    vue.watch(ref, (n) => console.log(n));
+    vue.watch(ref, (n) => console.log(`Outside: ${n}`));
 
     return () => {
-      const [count, setCount] = react.useState(ref.value * 2);
+      const [count, setCount] = react.useState(ref.value);
 
-      react.useEffect(() => fn(count), [count]);
+      react.useEffect(() => console.log(`Inside: ${count}`), [count]);
 
-      return w.fragment([
-        w.button(['Click Vue'], { onClick: () => { ref.value += 1; } }),
-        w.button(['Click React'], { onClick: () => setCount(count + 1) }),
+      return fragment([
+        div([`${ref.value}`, `${count}`]),
+        button(['Outside'], {onClick: () => {ref.value += 1;}}),
+        button(['Inside'], {onClick: () => setCount(count + 1)}),
       ]);
     };
   },
 };
+
+vue.createApp(h(counter)).mount(document.body);
 ```
 
 ## Targets

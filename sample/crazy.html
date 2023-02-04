@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+
+<body>
+  <script src="../dist/crazy.js"></script>
+  <script>
+    const {div, button, fragment, h, vue, react} = window.Crazy;
+
+    const counter = {
+      setup() {
+        const ref = vue.ref(0);
+
+        vue.watch(ref, (n) => console.log(`Outside: ${n}`));
+
+        return () => {
+          const [count, setCount] = react.useState(ref.value);
+
+          react.useEffect(() => console.log(`Inside: ${count}`), [count]);
+
+          return fragment([
+            div([`${ref.value}`, `${count}`]),
+            button(['Outside'], {onClick: () => {ref.value += 1;}}),
+            button(['Inside'], {onClick: () => setCount(count + 1)}),
+          ]);
+        };
+      },
+    };
+
+    vue.createApp(h(counter)).mount(document.body);
+  </script>
+</body>

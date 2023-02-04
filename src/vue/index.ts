@@ -24,6 +24,11 @@ function createApp(vdom: VNode) {
 
 function ref<T>(init: T) {
   const node = web.getCurrentComponent();
+  const rerender = (n: unknown, o: unknown) => {
+    if (n !== o) {
+      dp.diffPatchRender(node, node);
+    }
+  };
 
   const proxy = new Proxy({ value: init }, {
     set(t, p, v, r) {
@@ -31,20 +36,18 @@ function ref<T>(init: T) {
       const result = Reflect.set(t, p, v, r);
       // recompiling vdom will need the latest value,
       // so we memorize oldValue and call setter first, then notify observers
-      const record = node.vueHookStates.get(proxy)!;
+      const effects = node.vueHookStates.get(proxy)!;
 
-      record.forEach((ob) => ob(v, oldValue));
+      effects.forEach((ob) => ob(v, oldValue));
 
       return result;
     },
     get(t, p, r) { // track if render function did use this state
-      const record = node.vueHookStates.get(proxy)!;
+      const effects = node.vueHookStates.get(proxy)!;
 
-      record.push((n, o) => {
-        if (n !== o) {
-          dp.diffPatchRender(node, node);
-        }
-      });
+      if (!effects.includes(rerender)) {
+        effects.push(rerender);
+      }
 
       return Reflect.get(t, p, r);
     },
@@ -58,13 +61,13 @@ function ref<T>(init: T) {
 function watch<T>(refValue: { value: T }, callback: Effect<T>) {
   const node = web.getCurrentComponent();
   const observer = callback as Effect<unknown>;
-  const record = node.vueHookStates!.get(refValue)!;
+  const effects = node.vueHookStates!.get(refValue)!;
 
-  record.push(observer);
+  effects.push(observer);
 
   return () => {
-    const index = record.indexOf(observer);
+    const index = effects.indexOf(observer);
 
-    if (index >= 0) record.splice(index, 1);
+    if (index >= 0) effects.splice(index, 1);
   };
 }

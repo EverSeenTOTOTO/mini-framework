@@ -55,4 +55,16 @@ export default [
     ],
     ...opts,
   },
+  {
+    input: path.resolve(__dirname, 'src/index.ts'),
+    output: [
+      {
+        file: path.resolve(__dirname, 'dist/crazy.js'),
+        format: 'umd',
+        name: 'Crazy',
+        sourcemap: true,
+      },
+    ],
+    ...opts,
+  },
 ];
