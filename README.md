@@ -2,7 +2,7 @@
 
 A minimal (<1000 lines of code excluding tests) implementation for React and Vue, for fun and personal learning.
 
-For more information, read my post [here](https://github.com/EverSeenTOTOTO/frontend-interview/blob/main/Framework.md). Example usages can be found in [samle](./sample) folder.
+For more information, read my post [here](https://github.com/EverSeenTOTOTO/frontend-interview/blob/main/Framework.md). Example usages can be found in [sample](./sample) folder.
 
 **Crazy mind**:
 

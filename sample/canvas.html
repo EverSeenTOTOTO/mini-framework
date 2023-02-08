@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+
+<body>
+  <canvas width="800" height="600"></canvas>
+  <script src="../dist/canvas.js"></script>
+  <script>
+    const {div, button, fragment, h, render} = window.Canvas;
+    const canvas = document.querySelector('canvas');
+
+    let count = 0;
+
+    const increment = () => {
+      count++;
+      repaint();
+    };
+    const decrement = () => {
+      count--;
+      repaint();
+    };;
+
+    const repaint = () => render(fragment([
+      div([`Count ${count}`], {
+        style: {
+          height: 20
+        }
+      }),
+      button(["Increment"], {
+        onClick: increment,
+        style: {
+          width: 80
+        }
+      }),
+      button(["Decrement"], {
+        onClick: decrement,
+        style: {
+          width: 80
+        }
+      })
+    ]), canvas);
+
+    repaint();
+  </script>
+</body>

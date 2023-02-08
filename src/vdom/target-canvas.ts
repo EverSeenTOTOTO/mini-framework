@@ -167,33 +167,35 @@ function execRestore(_inst: InstRestore, ctx: CanvasRenderingContext2D) {
 /* emit instructions */
 
 // is there an API to track painter cursor coordinates inside a canvas?
-export type Context = {
-  x: number,
-  y: number,
-  fontSize: number
-  fontFamily: string,
-  eventListeners: ({ event: string, callback: EventListenerOrEventListenerObject })[]
-  canvas: HTMLCanvasElement,
-};
+export class Context {
+  x = 0;
 
-export function createContext(canvas: HTMLCanvasElement): Context {
-  return {
-    canvas,
-    x: 0,
-    y: 0,
-    fontSize: 16,
-    fontFamily: 'sans-serif',
-    eventListeners: [],
-  };
-}
+  y = 0;
 
-export function resetContext(ctx: Context) {
-  ctx.x = 0;
-  ctx.y = 0;
-  ctx.fontSize = 16;
-  ctx.fontFamily = 'sans-serif';
-  ctx.eventListeners.forEach((each) => ctx.canvas?.removeEventListener(each.event, each.callback));
-  ctx.eventListeners = [];
+  fontSize = 16;
+
+  fontFamily = 'sans-serif';
+
+  eventListeners: ({ event: string, callback: EventListenerOrEventListenerObject })[] = [];
+
+  canvas: HTMLCanvasElement;
+
+  constructor(canvas: HTMLCanvasElement) {
+    this.canvas = canvas;
+  }
+
+  reset() {
+    const ctx = this.canvas.getContext('2d');
+
+    ctx?.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    this.x = 0;
+    this.y = 0;
+    this.fontSize = 16;
+    this.fontFamily = 'sans-serif';
+    this.eventListeners.forEach((each) => this.canvas?.removeEventListener(each.event, each.callback));
+    this.eventListeners = [];
+  }
 }
 
 export function emitInsts(node: VNode, ctx: Context) {
@@ -257,16 +259,16 @@ export function emitFragment(node: VNodeFragment, ctx: Context): RenderInst[] {
 }
 
 export function emitText(node: VNodeText, ctx: Context) {
-  const inst: InstFillText = {
+  const insts: RenderInst[] = [{
     name: 'fillText',
     text: node.text,
     x: ctx.x,
     y: ctx.y + ctx.fontSize,
-  };
+  }];
 
-  node.output = [inst];
+  node.output = [insts[0]];
 
-  return inst;
+  return insts;
 }
 
 // should obey the css flow rules, compute width top-down and compute height bottom-up,
@@ -372,19 +374,27 @@ export function emitButton(node: VNodeButton, ctx: Context): RenderInst[] {
 
   insts.push({ name: 'restore' });
 
+  ctx.x += style.width;
+  insts.push({
+    name: 'moveTo',
+    x: ctx.x,
+    y: ctx.y,
+  });
+
   node.output = insts;
 
   return insts;
 }
 
 function bindCanvasClick(cb: (e: MouseEvent) => void, style: Required<ts.AttrStyle>, ctx: Context) {
+  const { x, y } = ctx;
   const callback: EventListenerOrEventListenerObject = (evt: Event) => {
     const e = evt as MouseEvent;
 
-    if (e.offsetX >= ctx.x
-      && e.offsetX <= ctx.x + style.width
-      && e.offsetY >= ctx.y
-      && e.offsetY <= ctx.y + style.height
+    if (e.offsetX >= x
+      && e.offsetX <= x + style.width
+      && e.offsetY >= y
+      && e.offsetY <= y + style.height
     ) {
       cb(e);
     }

@@ -133,9 +133,9 @@ function doChangeEvent(action: ActionChangeEvent) {
 /* naive diff patch algorithm */
 
 export function diffPatchRender(oldVNode: VNode, newVNode: VNode) {
-  const actions = diffPatch(oldVNode, newVNode);
+  const actions = diffPatch(oldVNode, newVNode); // diff
 
-  actions.forEach(doAction);
+  actions.forEach(doAction); // patch
 }
 
 export function diffPatch(source: VNode, target: VNode) {

@@ -29,7 +29,9 @@ it('test emitVNode', () => {
         onClick: () => console.log('hello world'),
       },
     ),
-  ]), c.createContext(canvas));
+  ]), new c.Context(canvas));
+
+  console.log(insts);
 
   expect(insts).toEqual(
     [
@@ -52,7 +54,9 @@ it('test emitVNode', () => {
       { name: 'fillStyle', style: '#000' },
       { name: 'fillText', text: 'Click Me', x: 0, y: 66 },
       { name: 'restore' },
+      { name: 'moveTo', x: 67, y: 50 },
       { name: 'comment', message: 'fragment 0 end' },
-    ],
+    ]
+    ,
   );
 });

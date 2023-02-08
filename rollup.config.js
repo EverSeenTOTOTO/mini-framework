@@ -67,4 +67,16 @@ export default [
     ],
     ...opts,
   },
+  {
+    input: path.resolve(__dirname, 'src/canvas/index.ts'),
+    output: [
+      {
+        file: path.resolve(__dirname, 'dist/canvas.js'),
+        format: 'umd',
+        name: 'Canvas',
+        sourcemap: true,
+      },
+    ],
+    ...opts,
+  },
 ];
