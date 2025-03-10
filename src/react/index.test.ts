@@ -89,7 +89,7 @@ it('test useEffect', () => {
 
 it('test useEffect props', () => {
   const fn = jest.fn();
-  const child = (state) => {
+  const child = (state:{ count:number }) => {
     react.useEffect(fn, [state.count]);
 
     return w.fragment([]);

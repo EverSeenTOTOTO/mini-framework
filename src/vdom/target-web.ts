@@ -23,7 +23,7 @@ export const getCurrentComponent = () => currentComponent;
 let currentHookId = 0;
 export const getCurrentHookId = () => currentHookId++;
 
-export const h = (component: ((state: unknown) => VNode) | VueComponentDefine, state?: unknown) => {
+export const h = <T>(component: ((state: T) => VNode) | VueComponentDefine, state?: T) => {
   const vnode: Partial<VNodeComponent> = {
     tag: 'component',
     reactHookStates: new Map(),
@@ -48,7 +48,7 @@ export const h = (component: ((state: unknown) => VNode) | VueComponentDefine, s
       // for react hooks
       currentComponent = vnode as VNodeComponent;
       currentHookId = 0;
-      return component(s); // will call react hooks
+      return component(s as T); // will call react hooks
     };
   }
 

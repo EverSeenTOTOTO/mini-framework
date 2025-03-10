@@ -22,7 +22,7 @@ function createRoot(container: HTMLElement) {
   return { render };
 }
 
-function useState<T>(init: T): [T, (value: T) => void] {
+function useState<T>(init: T): [T, (valOrFn: T | ((old: T) => T)) => void] {
   const hookId = web.getCurrentHookId();
   const node = web.getCurrentComponent();
   const hookState = node.reactHookStates.get(hookId);
