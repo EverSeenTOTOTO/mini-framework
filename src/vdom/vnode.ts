@@ -36,8 +36,8 @@ export interface VNodeButton<T> extends VNodeBase<T, 'button'> {
   children: VNode<T>[],
 }
 
-export type UseStateHookState = { type: 'useState', state: unknown, dirty: boolean };
-export type UseEffectHookState = { type: 'useEffect', clearEffect?: () => void };
+export type UseStateHookState = { type: 'useState', state: unknown };
+export type UseEffectHookState = { type: 'useEffect', clearEffect?: () => void, deps?: unknown[] };
 
 export type Effect<T> = (newValue: T, oldValue: T) => void;
 

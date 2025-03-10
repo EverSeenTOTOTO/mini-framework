@@ -24,6 +24,7 @@ module.exports = {
     'max-len': 'off',
     'no-console': 'off',
     'no-plusplus': 'off',
+    'no-continue': 'off',
     'no-nested-ternary': 'off',
     'arrow-body-style': 'off',
     'import/extensions': 'off',

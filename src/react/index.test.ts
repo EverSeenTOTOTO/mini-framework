@@ -33,51 +33,37 @@ it('test useState', () => {
   expect(getByText(btn, '2')).not.toBeNull();
 });
 
-it('test useState nested', () => {
-  const inner = (init: unknown) => {
-    const [count, setCount] = react.useState(init as number);
-
-    react.useEffect(() => console.log(init), [init]);
-
-    return w.fragment([
-      w.div([`${count}`]),
-      w.button(['Inner'], {
-        onClick: () => setCount(count + 1),
-      })]);
-  };
-  const outer = () => {
+it('test useState fn', () => {
+  const counter = () => {
     const [count, setCount] = react.useState(0);
 
-    return w.fragment([
-      w.h(inner, count),
-      w.button(['Outer'], {
-        onClick: () => setCount(count + 1),
-      })]);
+    return w.button([`${count}`], {
+      onClick: () => setCount((c) => c + 1),
+    });
   };
 
-  render(w.h(outer));
+  render(w.h(counter));
 
-  const btnInside = getByText(document.body, 'Inner');
-  const btnOutside = getByText(document.body, 'Outer');
+  const btn = document.querySelector('button')!;
 
-  btnOutside.click();
-  btnOutside.click();
-  btnOutside.click();
-  expect(getByText(document.body, '0')).not.toBeNull();
-  btnInside.click();
-  expect(getByText(document.body, '1')).not.toBeNull();
-  btnInside.click();
-  expect(getByText(document.body, '2')).not.toBeNull();
+  expect(getByText(btn, '0')).not.toBeNull();
+
+  btn.click();
+  expect(getByText(btn, '1')).not.toBeNull();
+  btn.click();
+  expect(getByText(btn, '2')).not.toBeNull();
 });
 
 it('test useEffect', () => {
   const triggerOnEach = jest.fn();
+  const triggerOnEach2 = jest.fn();
   const triggerOnce = jest.fn();
 
   const counter = () => {
     const [count, setCount] = react.useState(0);
 
     react.useEffect(triggerOnEach, [count]);
+    react.useEffect(triggerOnEach2);
     react.useEffect(triggerOnce, []);
 
     return w.button([], {
@@ -91,12 +77,44 @@ it('test useEffect', () => {
 
   btn.click();
   expect(triggerOnEach).toBeCalledTimes(2);
+  expect(triggerOnEach2).toBeCalledTimes(2);
   expect(triggerOnce).toBeCalledTimes(1);
   btn.click();
   btn.click();
   btn.click();
   expect(triggerOnEach).toBeCalledTimes(5);
+  expect(triggerOnEach2).toBeCalledTimes(5);
   expect(triggerOnce).toBeCalledTimes(1);
+});
+
+it('test useEffect props', () => {
+  const fn = jest.fn();
+  const child = (state) => {
+    react.useEffect(fn, [state.count]);
+
+    return w.fragment([]);
+  };
+
+  const parent = () => {
+    const [count, setCount] = react.useState(0);
+
+    return w.fragment(
+      [
+        w.h(child, { count }),
+        w.button([], {
+          onClick: () => setCount(count + 1),
+        }),
+      ],
+    );
+  };
+
+  render(w.h(parent));
+
+  const btn = document.querySelector('button')!;
+
+  btn.click();
+  btn.click();
+  expect(fn).toBeCalledTimes(3);
 });
 
 it('test useRef', () => {
