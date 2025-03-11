@@ -3,11 +3,9 @@ import * as dp from '@/vdom/diff-patch-web';
 import * as web from '@/vdom/target-web';
 import { UseEffectHookState, UseStateHookState } from '@/vdom/vnode';
 
-export default { ...web, createRoot, useState, useEffect, useRef, useMemo };
-
 const effectList: { hookState: UseEffectHookState, effect: () => void | (() =>void) }[] = [];
 
-export const flushEffect = () => {
+const flushEffect = () => {
   effectList.forEach((each) => {
     // TODO: queueMicrotask
     // eslint-disable-next-line no-param-reassign
@@ -85,6 +83,7 @@ function useEffect(effect: () => void | (() => void), deps?: Array<unknown>): vo
   if (!deps || diffDeps(hookState.deps!, deps)) {
     if (hookState.clearEffect) hookState.clearEffect();
 
+    hookState.deps = deps;
     effectList.unshift({ hookState, effect });
   }
 }
@@ -100,3 +99,5 @@ function useMemo<T, U>(factory: () => T, deps: Array<U>) {
 
   return state;
 }
+
+export default { ...web, createRoot, useState, useEffect, useRef, useMemo, flushEffect };

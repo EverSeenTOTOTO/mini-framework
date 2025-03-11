@@ -4,7 +4,7 @@ import * as web from '@/vdom/target-web';
 import * as dp from '@/vdom/diff-patch-web';
 import type { VNode } from '@/vdom/target-web';
 import { Effect } from '@/vdom/vnode';
-import { flushEffect } from '@/react';
+import react from '@/react';
 
 export default { ...web, createApp, ref, watch };
 
@@ -14,7 +14,7 @@ function createApp(vdom: VNode) {
     if (!mounted) {
       web.evalVNode(vdom);
       container.append(...vdom.output!);
-      flushEffect();
+      react.flushEffect(); // just for fun
       mounted = true;
     } else {
       console.warn('App already mounted');
@@ -29,7 +29,7 @@ function ref<T>(init: T) {
   const rerender = (n: unknown, o: unknown) => {
     if (n !== o) {
       dp.diffPatchRender(node, node);
-      flushEffect();
+      react.flushEffect();
     }
   };
 
