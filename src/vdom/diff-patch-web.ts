@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable no-param-reassign */
-import { VNode, evalVNode, VNodeText, VNodeComponent } from './target-web';
 import { diffObject, minimalEditSequence } from '@/utils';
+import { evalVNode, VNode, VNodeComponent, VNodeText } from './target-web';
 
 /* diff-patch actions */
 

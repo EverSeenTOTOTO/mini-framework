@@ -1,9 +1,20 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import * as web from '@/vdom/target-web';
 import * as dp from '@/vdom/diff-patch-web';
+import * as web from '@/vdom/target-web';
 import { UseEffectHookState, UseStateHookState } from '@/vdom/vnode';
 
 export default { ...web, createRoot, useState, useEffect, useRef, useMemo };
+
+const effectList: { hookState: UseEffectHookState, effect: () => void | (() =>void) }[] = [];
+
+export const flushEffect = () => {
+  effectList.forEach((each) => {
+    // TODO: queueMicrotask
+    // eslint-disable-next-line no-param-reassign
+    each.hookState.clearEffect = each.effect() ?? undefined;
+  });
+  effectList.splice(0, effectList.length);
+};
 
 function createRoot(container: HTMLElement) {
   let old: web.VNode | undefined;
@@ -16,6 +27,7 @@ function createRoot(container: HTMLElement) {
       container.append(...vdom.output!);
     }
 
+    flushEffect();
     old = vdom;
   }
 
@@ -41,6 +53,7 @@ function useState<T>(init: T): [T, (valOrFn: T | ((old: T) => T)) => void] {
       // diffPatchComponent will recompile vdom, which reexecutes useState and get the latest value
       // so the new generated vdom will be different from the old `node.vdom`
       dp.diffPatchRender(node, node);
+      flushEffect();
     }
   };
 
@@ -58,21 +71,21 @@ const diffDeps = (oldDeps: unknown[], newDeps:unknown[]) => {
 function useEffect(effect: () => void | (() => void), deps?: Array<unknown>): void {
   const hookId = web.getCurrentHookId();
   const node = web.getCurrentComponent();
-  const hookState = node.reactHookStates.get(hookId);
 
-  if (!hookState) { // init
-    node.reactHookStates.set(hookId, { type: 'useEffect', clearEffect: effect() ?? undefined, deps });
+  if (!node.reactHookStates.get(hookId)) { // init
+    const hookState:UseEffectHookState = { type: 'useEffect', deps };
+
+    node.reactHookStates.set(hookId, hookState);
+    effectList.unshift({ hookState, effect });
     return;
   }
 
-  if (hookState.type !== 'useEffect') return;
+  const hookState = node.reactHookStates.get(hookId) as UseEffectHookState;
 
   if (!deps || diffDeps(hookState.deps!, deps)) {
-    const { clearEffect } = node.reactHookStates.get(hookId) as UseEffectHookState;
+    if (hookState.clearEffect) hookState.clearEffect();
 
-    if (clearEffect) clearEffect();
-
-    node.reactHookStates.set(hookId, { type: 'useEffect', clearEffect: effect() ?? undefined, deps });
+    effectList.unshift({ hookState, effect });
   }
 }
 
@@ -81,9 +94,9 @@ function useRef<T>(init: T) {
 }
 
 function useMemo<T, U>(factory: () => T, deps: Array<U>) {
-  const ref = useRef<T | undefined>(undefined);
+  const [state, setState] = useState(factory());
 
-  useEffect(() => { ref.current = factory(); }, deps);
+  useEffect(() => { setState(factory()); }, deps);
 
-  return ref.current as T;
+  return state;
 }

@@ -54,16 +54,16 @@ it('test useState fn', () => {
   expect(getByText(btn, '2')).not.toBeNull();
 });
 
-it('test useEffect', () => {
+it('test useEffect trigger', () => {
   const triggerOnEach = jest.fn();
-  const triggerOnEach2 = jest.fn();
+  const triggerOnEachNoDep = jest.fn();
   const triggerOnce = jest.fn();
 
   const counter = () => {
     const [count, setCount] = react.useState(0);
 
     react.useEffect(triggerOnEach, [count]);
-    react.useEffect(triggerOnEach2);
+    react.useEffect(triggerOnEachNoDep);
     react.useEffect(triggerOnce, []);
 
     return w.button([], {
@@ -77,22 +77,25 @@ it('test useEffect', () => {
 
   btn.click();
   expect(triggerOnEach).toBeCalledTimes(2);
-  expect(triggerOnEach2).toBeCalledTimes(2);
+  expect(triggerOnEachNoDep).toBeCalledTimes(2);
   expect(triggerOnce).toBeCalledTimes(1);
   btn.click();
   btn.click();
   btn.click();
   expect(triggerOnEach).toBeCalledTimes(5);
-  expect(triggerOnEach2).toBeCalledTimes(5);
+  expect(triggerOnEachNoDep).toBeCalledTimes(5);
   expect(triggerOnce).toBeCalledTimes(1);
 });
 
 it('test useEffect props', () => {
-  const fn = jest.fn();
   const child = (state:{ count:number }) => {
-    react.useEffect(fn, [state.count]);
+    const [count, setCount] = react.useState(0);
 
-    return w.fragment([]);
+    react.useEffect(() => {
+      setCount(state.count);
+    }, [state.count]);
+
+    return w.fragment([`Count: ${count}`]);
   };
 
   const parent = () => {
@@ -114,7 +117,108 @@ it('test useEffect props', () => {
 
   btn.click();
   btn.click();
-  expect(fn).toBeCalledTimes(3);
+  expect(getByText(document.body, 'Count: 2')).not.toBeNull();
+});
+
+it('test useEffect child', () => {
+  const fn = jest.fn();
+  const child = () => {
+    fn('child render');
+
+    return w.fragment([]);
+  };
+
+  const parent = () => {
+    react.useEffect(() => {
+      fn('parent effect');
+    }, []);
+
+    return w.h(child);
+  };
+
+  render(w.h(parent));
+
+  expect(fn).toHaveBeenNthCalledWith(1, 'child render');
+  expect(fn).toHaveBeenNthCalledWith(2, 'parent effect');
+});
+
+// it('test useEffect child, async', (done) => {
+//   const fn = jest.fn();
+//   const child = () => {
+//     Promise.resolve().then(() => fn('child render'));
+//
+//     return w.fragment([]);
+//   };
+//
+//   const parent = () => {
+//     react.useEffect(() => {
+//       fn('parent effect');
+//     }, []);
+//
+//     return w.h(child);
+//   };
+//
+//   render(w.h(parent));
+//
+//   setTimeout(() => {
+//     expect(fn).toHaveBeenNthCalledWith(1, 'child render');
+//     expect(fn).toHaveBeenNthCalledWith(2, 'parent effect');
+//     done();
+//   });
+// });
+
+it('test useEffect clear', () => {
+  const fn = jest.fn();
+
+  const Counter = () => {
+    const [count, setCount] = react.useState(0);
+
+    react.useEffect(() => fn, [count]);
+
+    return w.button([], {
+      onClick: () => setCount(count + 1),
+    });
+  };
+
+  render(w.h(Counter));
+
+  const btn = document.querySelector('button')!;
+
+  btn.click();
+  expect(fn).toHaveBeenCalledTimes(1);
+  btn.click();
+  expect(fn).toHaveBeenCalledTimes(2);
+});
+
+it('test useEffect clear child', () => {
+  const fn = jest.fn();
+
+  const child = (state:any) => {
+    react.useEffect(() => () => fn('child clear'), [state]);
+
+    return w.fragment([]);
+  };
+
+  const Counter = () => {
+    const [count, setCount] = react.useState(0);
+
+    react.useEffect(() => () => fn('parent clear'), [count]);
+
+    return w.button([w.h(child, {})], {
+      onClick: () => setCount(count + 1),
+    });
+  };
+
+  render(w.h(Counter));
+
+  const btn = document.querySelector('button')!;
+
+  btn.click();
+  expect(fn).toHaveBeenNthCalledWith(1, 'parent clear');
+  expect(fn).toHaveBeenNthCalledWith(2, 'child clear');
+  btn.click();
+  expect(fn).toHaveBeenNthCalledWith(3, 'parent clear');
+  expect(fn).toHaveBeenNthCalledWith(4, 'child clear');
 });
 
 it('test useRef', () => {
@@ -146,8 +250,8 @@ it('test useMemo', () => {
   const counter = () => {
     const [count, setCount] = react.useState(0);
 
-    x = react.useMemo(() => { return count; }, [count]);
-    y = react.useMemo(() => { return count; }, []);
+    x = react.useMemo(() => count, [count]);
+    y = react.useMemo(() => count, []);
 
     return w.button([], {
       onClick: () => setCount(count + 1),
