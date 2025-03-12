@@ -1,4 +1,4 @@
-import { Edition, flatten, minimalEditSequence } from '@/utils';
+import { Edition, flatten, minimalEditSequence, PriorHeap } from '@/utils';
 
 it('test flatten', () => {
   expect(flatten([])).toEqual([]);
@@ -57,4 +57,41 @@ it('test editSequence', () => {
   testSeq([1, 2, 3, 4], [0, 0, 0, 0]);
   testSeq([1, 2, 3, 4], []);
   testSeq([], [1, 2, 3, 4]);
+});
+
+it('test PriorHeap', () => {
+  const heap = new PriorHeap([
+    1, 2, 3, 4, 5,
+  ]);
+
+  expect(heap.top()).toBe(1);
+  expect(heap.length).toBe(5);
+
+  expect(heap.pop()).toBe(1);
+  expect(heap.length).toBe(4);
+  expect(heap.pop()).toBe(2);
+  expect(heap.top()).toBe(3);
+
+  heap.push(2);
+  expect(heap.top()).toBe(2);
+  heap.push(1);
+  expect(heap.top()).toBe(1);
+});
+
+it('test PriorHeap comparar', () => {
+  const heap = new PriorHeap([
+    'a', 'ab', 'abc', 'abcd', 'abcde',
+  ], (a, b) => a.length < b.length);
+
+  expect(heap.top()).toBe('a');
+  expect(heap.length).toBe(5);
+
+  expect(heap.pop()).toBe('a');
+  expect(heap.pop()).toBe('ab');
+  expect(heap.top()).toBe('abc');
+
+  heap.push('a');
+  expect(heap.top()).toBe('a');
+  heap.push('ab');
+  expect(heap.top()).toBe('a');
 });
