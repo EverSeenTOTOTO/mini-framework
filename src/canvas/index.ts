@@ -7,9 +7,9 @@ let ctx: c.Context;
 function render(vdom: c.VNode, canvas: HTMLCanvasElement) {
   if (!ctx) ctx = new c.Context(canvas);
   ctx.reset();
-  c.emitInsts(vdom, ctx);
+  c.emitInsts(vdom, ctx, () => {
+    // console.log(vdom.output);
 
-  // console.log(vdom.output);
-
-  vdom.output?.forEach((inst) => c.execInst(inst, canvas.getContext('2d')!));
+    vdom.output?.forEach((inst) => c.execInst(inst, canvas.getContext('2d')!));
+  });
 }

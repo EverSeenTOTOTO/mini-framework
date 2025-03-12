@@ -6,16 +6,15 @@ import type { VNode } from '@/vdom/target-web';
 import { Effect } from '@/vdom/vnode';
 import react from '@/react';
 
-export default { ...web, createApp, ref, watch };
-
 function createApp(vdom: VNode) {
   let mounted = false;
   function mount(container: HTMLElement) {
     if (!mounted) {
-      web.evalVNode(vdom);
-      container.append(...vdom.output!);
-      react.flushEffect(); // just for fun
-      mounted = true;
+      web.evalVNode(vdom, () => {
+        container.append(...vdom.output!);
+        react.flushEffect(); // just for fun
+        mounted = true;
+      });
     } else {
       console.warn('App already mounted');
     }
@@ -28,8 +27,9 @@ function ref<T>(init: T) {
   const node = web.getCurrentComponent();
   const rerender = (n: unknown, o: unknown) => {
     if (n !== o) {
-      dp.diffPatchRender(node, node);
-      react.flushEffect();
+      dp.diffPatchRender(node, node, () => {
+        react.flushEffect();
+      });
     }
   };
 
@@ -74,3 +74,5 @@ function watch<T>(refValue: { value: T }, callback: Effect<T>) {
     if (index >= 0) effects.splice(index, 1);
   };
 }
+
+export default { ...web, createApp, ref, watch };

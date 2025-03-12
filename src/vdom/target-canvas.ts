@@ -1,6 +1,5 @@
 /* eslint-disable no-param-reassign */
 import * as ts from './vnode';
-import { flatten } from '@/utils';
 
 export type VNodeFragment = ts.VNodeFragment<RenderInst[]>;
 export type VNodeText = ts.VNodeText<RenderInst[]>;
@@ -198,8 +197,8 @@ export class Context {
   }
 }
 
-export function emitInsts(node: VNode, ctx: Context) {
-  const insts: RenderInst[] = [
+export function emitInsts(node: VNode, ctx: Context, callback: (output: RenderInst[]) => void) {
+  const insts:RenderInst[] = [
     {
       name: 'reset',
     },
@@ -213,35 +212,44 @@ export function emitInsts(node: VNode, ctx: Context) {
       size: ctx.fontSize,
       family: ctx.fontFamily,
     },
-    ...flatten([emitVNode(node, ctx)]) as RenderInst[],
   ];
-
-  node.output = insts;
-
-  return insts;
+  emitVNode(node, ctx, (output) => {
+    insts.push(...output);
+    node.output = insts;
+    callback(node.output);
+  });
 }
 
-function emitVNode(node: VNode, ctx: Context) {
+function emitVNode(node: VNode, ctx: Context, callback: (output: RenderInst[]) => void) {
   switch (node.tag) {
     case 'fragment':
-      return emitFragment(node, ctx);
+      return emitFragment(node, ctx, callback);
     case 'text':
-      return emitText(node, ctx);
+      return emitText(node, ctx, callback);
     case 'div':
-      return emitDiv(node, ctx);
+      return emitDiv(node, ctx, callback);
     case 'button':
-      return emitButton(node, ctx);
+      return emitButton(node, ctx, callback);
     default:
       throw new Error(`Unknown node: ${JSON.stringify(node, null, 2)}`);
   }
 }
 
-function emitSeq(nodes: VNode[], ctx: Context) {
-  return flatten(nodes.map((n) => emitVNode(n, ctx))) as RenderInst[];
+function emitSeq(nodes: VNode[], ctx: Context, callback: (output: RenderInst[]) => void) {
+  if (nodes.length === 0) {
+    callback([]);
+    return;
+  }
+
+  emitVNode(nodes[0], ctx, (firstOutput) => {
+    emitSeq(nodes.slice(1), ctx, (restOutput) => {
+      callback([...firstOutput, ...restOutput]);
+    });
+  });
 }
 
 let id = 0;
-export function emitFragment(node: VNodeFragment, ctx: Context): RenderInst[] {
+export function emitFragment(node: VNodeFragment, ctx: Context, callback: (output: RenderInst[]) => void) {
   const start: InstComment = {
     name: 'comment',
     message: `fragment ${id} start`,
@@ -253,27 +261,26 @@ export function emitFragment(node: VNodeFragment, ctx: Context): RenderInst[] {
 
   id += 1;
 
-  node.output = [start, ...emitSeq(node.children, ctx), end];
-
-  return node.output;
+  emitSeq(node.children, ctx, (output) => {
+    node.output = [start, ...output, end];
+    callback(node.output);
+  });
 }
 
-export function emitText(node: VNodeText, ctx: Context) {
-  const insts: RenderInst[] = [{
+export function emitText(node: VNodeText, ctx: Context, callback: (output: RenderInst[]) => void) {
+  node.output = [{
     name: 'fillText',
     text: node.text,
     x: ctx.x,
     y: ctx.y + ctx.fontSize,
   }];
 
-  node.output = [insts[0]];
-
-  return insts;
+  callback(node.output);
 }
 
 // should obey the css flow rules, compute width top-down and compute height bottom-up,
 // here we assume that the width and height are already computed and always available in node.
-export function emitDiv(node: VNodeDiv, ctx: Context): RenderInst[] {
+export function emitDiv(node: VNodeDiv, ctx: Context, callback: (output: RenderInst[]) => void) {
   const insts: RenderInst[] = [];
   const style = {
     width: 0,
@@ -306,23 +313,25 @@ export function emitDiv(node: VNodeDiv, ctx: Context): RenderInst[] {
     });
   }
 
-  insts.push(...emitSeq(node.children, ctx));
-  insts.push({ name: 'restore' });
+  emitSeq(node.children, ctx, (output) => {
+    insts.push(...output);
+    insts.push({ name: 'restore' });
 
-  // div is a block element, set cursor to newline
-  ctx.y += style.height;
-  insts.push({
-    name: 'moveTo',
-    x: ctx.x,
-    y: ctx.y,
+    // div is a block element, set cursor to newline
+    ctx.y += style.height;
+    insts.push({
+      name: 'moveTo',
+      x: ctx.x,
+      y: ctx.y,
+    });
+
+    node.output = insts;
+
+    callback(node.output);
   });
-
-  node.output = insts;
-
-  return insts;
 }
 
-export function emitButton(node: VNodeButton, ctx: Context): RenderInst[] {
+export function emitButton(node: VNodeButton, ctx: Context, callback: (output: RenderInst[]) => void) {
   const insts: RenderInst[] = [];
   const style = {
     // default button style
@@ -366,24 +375,25 @@ export function emitButton(node: VNodeButton, ctx: Context): RenderInst[] {
     });
   }
 
-  insts.push(...emitSeq(node.children, ctx)); // recursive descent
+  emitSeq(node.children, ctx, (output) => {
+    insts.push(...output);
 
-  if (node.attr?.onClick) {
-    bindCanvasClick(node.attr.onClick, style, ctx);
-  }
+    if (node.attr?.onClick) {
+      bindCanvasClick(node.attr.onClick, style, ctx);
+    }
 
-  insts.push({ name: 'restore' });
+    insts.push({ name: 'restore' });
 
-  ctx.x += style.width;
-  insts.push({
-    name: 'moveTo',
-    x: ctx.x,
-    y: ctx.y,
+    ctx.x += style.width;
+    insts.push({
+      name: 'moveTo',
+      x: ctx.x,
+      y: ctx.y,
+    });
+
+    node.output = insts;
+    callback(node.output);
   });
-
-  node.output = insts;
-
-  return insts;
 }
 
 function bindCanvasClick(cb: (e: MouseEvent) => void, style: Required<ts.AttrStyle>, ctx: Context) {

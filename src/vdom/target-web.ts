@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable no-param-reassign */
 import * as ts from './vnode';
-import { flatten } from '@/utils';
 
 export type VNodeFragment = ts.VNodeFragment<Node[]>;
 export type VNodeText = ts.VNodeText<Node[]>;
@@ -55,45 +54,55 @@ export const h = <T>(component: ((state: T) => VNode) | VueComponentDefine, stat
   return vnode as VNodeComponent;
 };
 
-export function evalVNode(node: VNode) {
+export function evalVNode(node: VNode, callback: (output:Node[]) => void): void {
   switch (node.tag) {
     case 'fragment':
-      return evalFragment(node);
+      return evalFragment(node, callback);
     case 'text':
-      return evalText(node);
+      return evalText(node, callback);
     case 'div':
-      return evalDiv(node);
+      return evalDiv(node, callback);
     case 'button':
-      return evalButton(node);
+      return evalButton(node, callback);
     case 'component':
-      return evalComponent(node);
+      return evalComponent(node, callback);
     default:
       throw new Error(`Unknown node: ${JSON.stringify(node, null, 2)}`);
   }
 }
 
-function evalSeq(nodes: VNode[]) {
-  return flatten(nodes.map(evalVNode)) as Node[]; // flattern
+function evalSeq(nodes: VNode[], callback: (output:Node[]) => void) {
+  if (nodes.length === 0) {
+    callback([]);
+    return;
+  }
+
+  evalVNode(nodes[0], (firstOutput) => {
+    evalSeq(nodes.slice(1), (restOutput) => {
+      callback([...firstOutput, ...restOutput]);
+    });
+  });
 }
 
 let id = 0;
-export function evalFragment(node: VNodeFragment): Node[] {
+export function evalFragment(node: VNodeFragment, callback: (output:Node[]) => void) {
   const start = document.createComment(`fragment ${id} start`);
   const end = document.createComment(`fragment ${id} end`);
 
   id += 1;
 
-  node.output = [start, ...evalSeq(node.children), end];
-
-  return node.output;
+  evalSeq(node.children, (output) => {
+    node.output = [start, ...output, end];
+    callback(node.output);
+  });
 }
 
-export function evalText(node: VNodeText) {
+export function evalText(node: VNodeText, callback:(output:Node[])=>void) {
   const text = document.createTextNode(node.text);
 
   node.output = [text];
 
-  return text;
+  callback(node.output);
 }
 
 function bindStyle(el: HTMLElement, style: ts.AttrStyle) {
@@ -114,21 +123,21 @@ function bindStyle(el: HTMLElement, style: ts.AttrStyle) {
   }
 }
 
-export function evalDiv(node: VNodeDiv) {
+export function evalDiv(node: VNodeDiv, callback:(output: Node[]) => void) {
   const elem = document.createElement('div');
 
   if (node.attr?.style) {
     bindStyle(elem, node.attr.style);
   }
 
-  elem.append(...evalSeq(node.children));
-
-  node.output = [elem];
-
-  return elem;
+  evalSeq(node.children, (output) => {
+    elem.append(...output);
+    node.output = [elem];
+    callback(node.output);
+  });
 }
 
-export function evalButton(node: VNodeButton) {
+export function evalButton(node: VNodeButton, callback:(output: Node[]) => void) {
   const btn = document.createElement('button');
 
   if (node.attr?.style) {
@@ -139,19 +148,20 @@ export function evalButton(node: VNodeButton) {
     btn.addEventListener('click', node.attr.onClick);
   }
 
-  btn.append(...evalSeq(node.children));
-
-  node.output = [btn];
-
-  return btn;
+  evalSeq(node.children, (output) => {
+    btn.append(...output);
+    node.output = [btn];
+    callback(node.output);
+  });
 }
 
-export function evalComponent(node: VNodeComponent) {
+export function evalComponent(node: VNodeComponent, callback:(output: Node[]) => void) {
   const vdom = node.component(node.state);
 
-  evalVNode(vdom);
-  node.output = vdom.output;
-  node.vdom = vdom;
+  evalVNode(vdom, () => {
+    node.output = vdom.output;
+    node.vdom = vdom;
 
-  return vdom.output!;
+    callback(vdom.output!);
+  });
 }

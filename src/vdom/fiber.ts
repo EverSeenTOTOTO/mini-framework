@@ -19,46 +19,12 @@ export class TaskQueue {
     this.frameLimit = frameLimit;
     this.channel = new MessageChannel();
 
-    this.channel.port1.onmessage = () => {
-      if (this.running) return;
-      this.running = true;
-
-      const start = Date.now();
-
-      while (true) {
-        const top = this.tasks.pop();
-
-        if (!top) {
-          this.running = false;
-          break;
-        }
-
-        try {
-          top.job();
-        } catch {
-          // TODO
-        }
-
-        if (this.tasks.length === 0) {
-          this.running = false;
-          break;
-        }
-
-        const elapsed = (Date.now() - start) / 1000;
-
-        if (elapsed >= this.frameLimit) {
-          // shedule next loop
-          this.channel.port2.postMessage('');
-          this.running = false;
-          break;
-        }
-      }
-    };
+    this.channel.port1.onmessage = () => this.flushTask();
   }
 
-  schedule(task: Task['job']):void;
-  schedule(task: Task):void;
-  schedule(task: any) {
+  enqueue(task: Task['job']):void;
+  enqueue(task: Task):void;
+  enqueue(task: any) {
     if (typeof task === 'function') {
       this.tasks.push({ job: task, priority: /* lowest */ this.tasks.length });
     } else {
@@ -66,9 +32,47 @@ export class TaskQueue {
     }
   }
 
-  start() {
-    if (!this.running) {
-      this.channel.port2.postMessage('');
+  // enqueue and flushTask
+  schedule(task: Task['job']):void;
+  schedule(task: Task):void;
+  schedule(task: any) {
+    this.enqueue(task);
+    this.flushTask();
+  }
+
+  protected flushTask() {
+    if (this.running) return;
+    this.running = true;
+
+    const start = Date.now();
+
+    while (true) {
+      const top = this.tasks.pop();
+
+      if (!top) {
+        this.running = false;
+        break;
+      }
+
+      try {
+        top.job();
+      } catch {
+        // TODO
+      }
+
+      if (this.tasks.length === 0) {
+        this.running = false;
+        break;
+      }
+
+      const elapsed = (Date.now() - start) / 1000;
+
+      if (elapsed >= this.frameLimit) {
+        // shedule next loop
+        this.channel.port2.postMessage('');
+        this.running = false;
+        break;
+      }
     }
   }
 

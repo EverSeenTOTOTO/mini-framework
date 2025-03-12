@@ -179,68 +179,70 @@ it('test diffPatchReplace', () => {
   const source = h.button(['Click']);
   const target = h.div([]);
 
-  h.evalVNode(source);
-  document.body.append(document.createElement('div')); // test index
-  document.body.append(...source.output!);
+  h.evalVNode(source, () => {
+    document.body.append(document.createElement('div')); // test index
+    document.body.append(...source.output!);
 
-  expect(document.querySelectorAll('div').length).toBe(1);
+    expect(document.querySelectorAll('div').length).toBe(1);
 
-  const actions = web.diffPatchReplace(source, target);
+    web.diffPatchReplace(source, target, (actions) => {
+      expect(actions).toEqual([
+        {
+          type: 'delete',
+          target: source.output,
+        },
+        {
+          type: 'insert',
+          index: 1,
+          target: document.body,
+          value: target.output!,
+        },
+      ]);
 
-  expect(actions).toEqual([
-    {
-      type: 'delete',
-      target: source.output,
-    },
-    {
-      type: 'insert',
-      index: 1,
-      target: document.body,
-      value: target.output!,
-    },
-  ]);
+      actions.forEach(web.doAction);
 
-  actions.forEach(web.doAction);
-
-  expect(document.querySelectorAll('button').length).toBe(0);
-  expect(document.querySelectorAll('div').length).toBe(2);
+      expect(document.querySelectorAll('button').length).toBe(0);
+      expect(document.querySelectorAll('div').length).toBe(2);
+    });
+  });
 });
 
 it('test diffPatchText', () => {
   const source: h.VNodeText = { tag: 'text', text: 'Hello' };
   const target: h.VNodeText = { tag: 'text', text: 'World' };
 
-  h.evalVNode(source);
+  h.evalVNode(source, () => {
+    web.diffPatchText(source, target, (actions) => {
+      expect(actions).toEqual([
+        {
+          type: 'change',
+          detail: 'text',
+          target: source.output![0],
+          value: target.text,
+        },
+      ]);
 
-  const actions = web.diffPatchText(source, target);
+      actions.forEach(web.doAction);
 
-  expect(actions).toEqual([
-    {
-      type: 'change',
-      detail: 'text',
-      target: source.output![0],
-      value: target.text,
-    },
-  ]);
-
-  actions.forEach(web.doAction);
-
-  expect(source.output![0].nodeValue).toBe('World');
+      expect(source.output![0].nodeValue).toBe('World');
+    });
+  });
 });
 
 it('test diffPatchComponent', () => {
   const state = { msg: 'Hello' };
   const source = h.h(() => h.div([state.msg])) as h.VNodeComponent;
 
-  h.evalVNode(source);
-  document.body.append(...source.output!);
+  h.evalVNode(source, () => {
+    document.body.append(...source.output!);
 
-  state.msg = 'World';
-  const actions = web.diffPatchComponent(source, source);
+    state.msg = 'World';
+    web.diffPatchComponent(source, source, (actions) => {
+      actions.forEach(web.doAction);
 
-  actions.forEach(web.doAction);
-
-  expect(getByText(document.body, 'World')).not.toBeNull();
+      expect(getByText(document.body, 'World')).not.toBeNull();
+    });
+  });
 });
 
 it('test diffPatchComponent vue', () => {
@@ -251,15 +253,16 @@ it('test diffPatchComponent vue', () => {
     },
   });
 
-  h.evalVNode(source);
-  document.body.append(...source.output!);
+  h.evalVNode(source, () => {
+    document.body.append(...source.output!);
 
-  state.msg = 'World';
-  const actions = web.diffPatchComponent(source, source);
+    state.msg = 'World';
+    web.diffPatchComponent(source, source, (actions) => {
+      actions.forEach(web.doAction);
 
-  actions.forEach(web.doAction);
-
-  expect(getByText(document.body, 'World')).not.toBeNull();
+      expect(getByText(document.body, 'World')).not.toBeNull();
+    });
+  });
 });
 
 it('test diffPatchAttributes', () => {
@@ -272,109 +275,113 @@ it('test diffPatchAttributes', () => {
     onClick: decrement,
   });
 
-  h.evalVNode(source);
+  h.evalVNode(source, () => {
+    const btn = source.output![0] as HTMLButtonElement;
+    web.diffPatchAttributes(source, target, (actions) => {
+      expect(actions).toEqual(
+        [
+          {
+            type: 'change',
+            target: btn,
+            detail: 'style',
+            value: { width: null, height: 100, bgColor: 'grey' },
+          },
+          {
+            type: 'change',
+            target: btn,
+            detail: 'event',
+            value: { onClick: [increment, decrement] },
+          },
+        ],
+      );
 
-  const btn = source.output![0] as HTMLButtonElement;
-  const actions = web.diffPatchAttributes(source, target);
+      actions.forEach(web.doAction);
 
-  expect(actions).toEqual(
-    [
-      {
-        type: 'change',
-        target: btn,
-        detail: 'style',
-        value: { width: null, height: 100, bgColor: 'grey' },
-      },
-      {
-        type: 'change',
-        target: btn,
-        detail: 'event',
-        value: { onClick: [increment, decrement] },
-      },
-    ],
-  );
-
-  actions.forEach(web.doAction);
-
-  btn.click();
-  expect(i).toBe(-1);
+      btn.click();
+      expect(i).toBe(-1);
+    });
+  });
 });
 
 it('test diffPatchChildren empty', () => {
   const source = h.div([]);
   const target = h.div([]);
 
-  h.evalVNode(source);
-
-  const actions = web.diffPatchChildren(source, target);
-
-  expect(actions).toEqual([]);
+  h.evalVNode(source, () => {
+    web.diffPatchChildren(source, target, (actions) => {
+      expect(actions).toEqual([]);
+    });
+  });
 });
 
 it('test diffPatchChildren same', () => {
   const source = h.div(['1']);
   const target = h.div(['1']);
 
-  h.evalVNode(source);
-
-  const actions = web.diffPatchChildren(source, target);
-
-  expect(actions).toEqual([]);
+  h.evalVNode(source, () => {
+    web.diffPatchChildren(source, target, (actions) => {
+      expect(actions).toEqual([]);
+    });
+  });
 });
 
 it('test diffPatchChildren diff', () => {
   const source = h.div(['1']);
   const target = h.div(['2']);
 
-  h.evalVNode(source);
-  document.body.append(...source.output!);
+  h.evalVNode(source, () => {
+    document.body.append(...source.output!);
 
-  const actions = web.diffPatchChildren(source, target);
+    web.diffPatchChildren(source, target, (actions) => {
+      actions.forEach(web.doAction);
 
-  actions.forEach(web.doAction);
-
-  expect(document.querySelector('div')?.childNodes[0].nodeValue).toBe('2');
+      expect(document.querySelector('div')?.childNodes[0].nodeValue).toBe('2');
+    });
+  });
 });
 
 it('test diffPatchChildren more', () => {
   const source = h.div(['1']);
   const target = h.div(['2', '1']);
 
-  h.evalVNode(source);
-  document.body.append(...source.output!);
+  h.evalVNode(source, () => {
+    document.body.append(...source.output!);
 
-  const actions = web.diffPatchChildren(source, target);
+    web.diffPatchChildren(source, target, (actions) => {
+      actions.forEach(web.doAction);
 
-  actions.forEach(web.doAction);
-
-  expect(document.querySelector('div')?.childNodes[0].nodeValue).toBe('2');
-  expect(document.querySelector('div')?.childNodes[1].nodeValue).toBe('1');
+      expect(document.querySelector('div')?.childNodes[0].nodeValue).toBe('2');
+      expect(document.querySelector('div')?.childNodes[1].nodeValue).toBe('1');
+    });
+  });
 });
 
 it('test diffPatchChildren less', () => {
   const source = h.div(['2', '1']);
   const target = h.div(['1']);
 
-  h.evalVNode(source);
-  document.body.append(...source.output!);
+  h.evalVNode(source, () => {
+    document.body.append(...source.output!);
 
-  const actions = web.diffPatchChildren(source, target);
-
-  actions.forEach(web.doAction);
-  expect(document.querySelector('div')?.childNodes[0].nodeValue).toBe('1');
-  expect(document.querySelector('div')?.childNodes[1]).toBeUndefined();
+    web.diffPatchChildren(source, target, (actions) => {
+      actions.forEach(web.doAction);
+      expect(document.querySelector('div')?.childNodes[0].nodeValue).toBe('1');
+      expect(document.querySelector('div')?.childNodes[1]).toBeUndefined();
+    });
+  });
 });
 
 it('test diffPatchChildren nested', () => {
   const source = h.div([h.div(['2']), h.div(['1'])]);
   const target = h.div([h.div(['1'])]);
 
-  h.evalVNode(source);
-  document.body.append(...source.output!);
+  h.evalVNode(source, () => {
+    document.body.append(...source.output!);
 
-  const actions = web.diffPatchChildren(source, target);
+    web.diffPatchChildren(source, target, (actions) => {
+      actions.forEach(web.doAction);
 
-  actions.forEach(web.doAction);
-
-  expect(document.querySelector('div > div')?.childNodes[0].nodeValue).toBe('1');
+      expect(document.querySelector('div > div')?.childNodes[0].nodeValue).toBe('1');
+    });
+  });
 });

@@ -132,38 +132,46 @@ function doChangeEvent(action: ActionChangeEvent) {
 
 /* naive diff patch algorithm */
 
-export function diffPatchRender(oldVNode: VNode, newVNode: VNode) {
-  const actions = diffPatch(oldVNode, newVNode); // diff
-
-  actions.forEach(doAction); // patch
+export function diffPatchRender(oldVNode: VNode, newVNode: VNode, callback = () => {}) {
+  diffPatch(oldVNode, newVNode, (actions) => {
+    actions.forEach(doAction); // patch
+    callback();
+  });
 }
 
-export function diffPatch(source: VNode, target: VNode) {
+export function diffPatch(source: VNode, target: VNode, callback: (actions: PatchAction[]) => void) {
   if (source.tag !== target.tag) {
-    return diffPatchReplace(source, target);
+    diffPatchReplace(source, target, callback);
+    return;
   }
-
-  const actions: PatchAction[] = [];
 
   if (source.tag === 'text') {
-    actions.push(...diffPatchText(source, target));
+    diffPatchText(source, target, (actions) => {
+      // actions operate on source.output, by setting target.output === source.output we reuse the DOM node
+      target.output = source.output;
+      callback(actions);
+    });
   } else if (source.tag === 'component') {
-    actions.push(...diffPatchComponent(source, target as VNodeComponent));
+    diffPatchComponent(source, target as VNodeComponent, (actions) => {
+      target.output = source.output;
+      callback(actions);
+    });
   } else {
-    actions.push(...diffPatchChildren(source, target as VNodeWithChildren));
-
-    if (source.tag !== 'fragment') {
-      actions.push(...diffPatchAttributes(source, target as VNodeWithAttr));
-    }
+    diffPatchChildren(source, target as VNodeWithChildren, (childActions) => {
+      if (source.tag !== 'fragment') {
+        diffPatchAttributes(source, target as VNodeWithAttr, (attrActions) => {
+          target.output = source.output;
+          callback([...childActions, ...attrActions]);
+        });
+        return;
+      }
+      target.output = source.output;
+      callback(childActions);
+    });
   }
-
-  // actions operate on source.output, by setting target.output === source.output we reuse the DOM node
-  target.output = source.output;
-
-  return actions;
 }
 
-export function diffPatchReplace(source: VNode, target: VNode): PatchAction[] {
+export function diffPatchReplace(source: VNode, target: VNode, callback: (actions: PatchAction[]) => void) {
   const old = source.output!;
   const parent = old[0].parentElement;
 
@@ -171,51 +179,47 @@ export function diffPatchReplace(source: VNode, target: VNode): PatchAction[] {
 
   const index = Array.from(parent.children).indexOf(old[0] as Element);
 
-  evalVNode(target);
-
-  return [
-    {
-      type: 'delete',
-      target: old,
-    },
-    {
-      type: 'insert',
-      index,
-      target: parent,
-      value: target.output!,
-    },
-  ];
+  evalVNode(target, () => {
+    callback([
+      {
+        type: 'delete',
+        target: old,
+      },
+      {
+        type: 'insert',
+        index,
+        target: parent,
+        value: target.output!,
+      },
+    ]);
+  });
 }
 
-export function diffPatchText(source: VNode, target: VNode): PatchAction[] {
+export function diffPatchText(source: VNode, target: VNode, callback: (actions: PatchAction[]) => void) {
   const s = source as VNodeText;
   const t = target as VNodeText;
 
-  if (s.text !== t.text) {
-    return [{
+  callback(s.text !== t.text
+    ? [{
       type: 'change',
       detail: 'text',
       target: s.output![0],
       value: t.text,
-    }];
-  }
-
-  return [];
+    }]
+    : []);
 }
 
-export function diffPatchComponent(source: VNodeComponent, target: VNodeComponent) {
+export function diffPatchComponent(source: VNodeComponent, target: VNodeComponent, callback: (actions: PatchAction[]) => void) {
   if (!source.vdom) throw new Error('source not initialized');
 
   target.reactHookStates = source.reactHookStates;
   target.vueHookStates = source.vueHookStates;
 
   const vdom = target.component(target.state);
-  const actions = diffPatch(source.vdom, vdom);
-
-  // source can be === to target, see hooks, so we can't move this statement up
-  target.vdom = vdom;
-
-  return actions;
+  diffPatch(source.vdom, vdom, (actions) => {
+    target.vdom = vdom;
+    callback(actions);
+  });
 }
 
 // VNodes that has attr and children
@@ -225,7 +229,7 @@ type VNodeWithAttr = VNode extends infer V
     : never
   : never;
 
-export function diffPatchAttributes(source: VNodeWithAttr, target: VNodeWithAttr) {
+export function diffPatchAttributes(source: VNodeWithAttr, target: VNodeWithAttr, callback: (actions: PatchAction[]) => void) {
   const actions: PatchAction[] = [];
 
   diffObject(source.attr ?? {}, target.attr ?? {}, (p, n, o) => {
@@ -236,7 +240,7 @@ export function diffPatchAttributes(source: VNodeWithAttr, target: VNodeWithAttr
     }
   });
 
-  return actions;
+  callback(actions);
 }
 
 function changeAttr(source: VNodeWithAttr, key: string, newValue: any, oldValue: any): ActionChange {
@@ -269,34 +273,49 @@ type VNodeWithChildren = VNode extends infer V
     : never
   : never;
 
-export function diffPatchChildren(source: VNodeWithChildren, target: VNodeWithChildren) {
+export function diffPatchChildren(source: VNodeWithChildren, target: VNodeWithChildren, callback: (actions: PatchAction[]) => void) {
   const editions = minimalEditSequence(source.children, target.children, compareVNode);
-  const actions: PatchAction[] = [];
 
-  editions.forEach((e) => {
+  const helper = (edits: typeof editions, cb: typeof callback) => {
+    if (edits.length === 0) {
+      cb([]);
+      return;
+    }
+
+    const e = edits[0];
+
     switch (e.action) {
       case 'keep':
-        actions.push(...diffPatch(e.source!, e.target!));
+        diffPatch(e.source!, e.target!, (firstActions) => {
+          helper(edits.slice(1), (restActions) => {
+            cb([...firstActions, ...restActions]);
+          });
+        });
         break;
       case 'insert':
-        evalVNode(e.target!);
-        actions.push({
-          type: 'insert',
-          index: e.index,
-          target: source.tag === 'fragment' ? source.output![0].parentElement! : source.output![0],
-          value: e.target!.output!,
+        evalVNode(e.target!, () => {
+          helper(edits.slice(1), (restActions) => {
+            cb([{
+              type: 'insert',
+              index: e.index,
+              target: source.tag === 'fragment' ? source.output![0].parentElement! : source.output![0],
+              value: e.target!.output!,
+            }, ...restActions]);
+          });
         });
         break;
       case 'delete':
-        actions.push({
-          type: 'delete',
-          target: e.source!.output!,
+        helper(edits.slice(1), (restActions) => {
+          cb([{
+            type: 'delete',
+            target: e.source!.output!,
+          }, ...restActions]);
         });
         break;
       default:
         break;
     }
-  });
+  };
 
-  return actions;
+  helper(editions, callback);
 }
