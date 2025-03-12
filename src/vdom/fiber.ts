@@ -65,7 +65,7 @@ export class TaskQueue {
         break;
       }
 
-      const elapsed = (Date.now() - start) / 1000;
+      const elapsed = Date.now() - start;
 
       if (elapsed >= this.frameLimit) {
         // shedule next loop
