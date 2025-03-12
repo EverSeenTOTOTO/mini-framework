@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable no-param-reassign */
 import { diffObject, minimalEditSequence } from '@/utils';
-import { evalVNode, VNode, VNodeComponent, VNodeText } from './target-web';
+import { evalVNode, queue, VNode, VNodeComponent, VNodeText } from './target-web';
 
 /* diff-patch actions */
 
@@ -253,7 +253,9 @@ function changeAttr(source: VNodeWithAttr, key: string, newValue: any, oldValue:
 
     return result;
   };
-  const createEventValue = () => (oldValue === newValue ? {} : { [key]: [oldValue, newValue] });
+  const createEventValue = () => (oldValue === newValue
+    ? {}
+    : { [key]: [oldValue, newValue] });
 
   return {
     type: 'change',
@@ -276,7 +278,7 @@ type VNodeWithChildren = VNode extends infer V
 export function diffPatchChildren(source: VNodeWithChildren, target: VNodeWithChildren, callback: (actions: PatchAction[]) => void) {
   const editions = minimalEditSequence(source.children, target.children, compareVNode);
 
-  const helper = (edits: typeof editions, cb: typeof callback) => {
+  const mapEditions = (edits: typeof editions, cb: typeof callback) => {
     if (edits.length === 0) {
       cb([]);
       return;
@@ -287,29 +289,29 @@ export function diffPatchChildren(source: VNodeWithChildren, target: VNodeWithCh
     switch (e.action) {
       case 'keep':
         diffPatch(e.source!, e.target!, (firstActions) => {
-          helper(edits.slice(1), (restActions) => {
+          queue.schedule(() => mapEditions(edits.slice(1), (restActions) => {
             cb([...firstActions, ...restActions]);
-          });
+          }));
         });
         break;
       case 'insert':
         evalVNode(e.target!, () => {
-          helper(edits.slice(1), (restActions) => {
+          queue.schedule(() => mapEditions(edits.slice(1), (restActions) => {
             cb([{
               type: 'insert',
               index: e.index,
               target: source.tag === 'fragment' ? source.output![0].parentElement! : source.output![0],
               value: e.target!.output!,
             }, ...restActions]);
-          });
+          }));
         });
         break;
       case 'delete':
-        helper(edits.slice(1), (restActions) => {
-          cb([{
+        mapEditions(edits.slice(1), (restActions) => {
+          queue.schedule(() => cb([{
             type: 'delete',
             target: e.source!.output!,
-          }, ...restActions]);
+          }, ...restActions]));
         });
         break;
       default:
@@ -317,5 +319,5 @@ export function diffPatchChildren(source: VNodeWithChildren, target: VNodeWithCh
     }
   };
 
-  helper(editions, callback);
+  mapEditions(editions, callback);
 }

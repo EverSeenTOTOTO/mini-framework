@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+
+
+<head>
+  <style>
+    button:active {
+      background-color: cyan;
+    }
+  </style>
+</head>
+
+<body>
+  <script src="../dist/react.js"></script>
+  <script>
+    const {div, button, fragment, h, createRoot, useState, useEffect} = window.React;
+
+    const App = (state) => {
+      const [count, setCount] = useState(0);
+
+      useEffect(() => {
+        setCount(state.count);
+      }, [state.count]);
+
+      return fragment([
+        button(
+          [`Depth: ${state.depth}, Count: ${count}`],
+          {
+            onClick: () => setCount(count + 1),
+          },
+        ),
+        h(App, {
+          depth: state.depth + 1,
+          count
+        })
+      ].filter(() => state.depth < 1e3))
+    };
+
+    createRoot(document.body).render(h(App, {depth: 0, count: 0}));
+  </script>
+</body>

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable no-param-reassign */
+import { TaskQueue } from './fiber';
 import * as ts from './vnode';
 
 export type VNodeFragment = ts.VNodeFragment<Node[]>;
@@ -54,6 +55,8 @@ export const h = <T>(component: ((state: T) => VNode) | VueComponentDefine, stat
   return vnode as VNodeComponent;
 };
 
+export const queue = new TaskQueue();
+
 export function evalVNode(node: VNode, callback: (output:Node[]) => void): void {
   switch (node.tag) {
     case 'fragment':
@@ -78,9 +81,11 @@ function evalSeq(nodes: VNode[], callback: (output:Node[]) => void) {
   }
 
   evalVNode(nodes[0], (firstOutput) => {
-    evalSeq(nodes.slice(1), (restOutput) => {
-      callback([...firstOutput, ...restOutput]);
-    });
+    queue.schedule(
+      () => evalSeq(nodes.slice(1), (restOutput) => {
+        callback([...firstOutput, ...restOutput]);
+      }),
+    );
   });
 }
 
