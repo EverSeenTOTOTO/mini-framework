@@ -210,7 +210,11 @@ export function diffPatchText(source: VNode, target: VNode, callback: (actions: 
 }
 
 export function diffPatchComponent(source: VNodeComponent, target: VNodeComponent, callback: (actions: PatchAction[]) => void) {
-  if (!source.vdom) throw new Error('source not initialized');
+  if (!source.vdom) {
+    // throw new Error('source not initialized');
+    queue.schedule(() => diffPatchComponent(source, target, callback));
+    return;
+  }
 
   target.reactHookStates = source.reactHookStates;
   target.vueHookStates = source.vueHookStates;

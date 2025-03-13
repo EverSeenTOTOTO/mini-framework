@@ -1,76 +1,51 @@
-import { PriorHeap } from '@/utils';
+import { LinkedQueue } from '@/utils';
 
-export type Task = {
-  priority: number;
-  job: () => void
-};
+export type Task = () => void;
 
 export class TaskQueue {
-  tasks: PriorHeap<Task>;
+  tasks: LinkedQueue<Task>;
 
   readonly frameLimit: number;
 
   private channel:MessageChannel;
 
-  private running = false;
-
   constructor(frameLimit = 1000 / 60) {
-    this.tasks = new PriorHeap<Task>([], (a, b) => a.priority < b.priority);
+    this.tasks = new LinkedQueue<Task>();
     this.frameLimit = frameLimit;
     this.channel = new MessageChannel();
 
     this.channel.port1.onmessage = () => this.flushTask();
   }
 
-  enqueue(task: Task['job']):void;
-  enqueue(task: Task):void;
-  enqueue(task: any) {
-    if (typeof task === 'function') {
-      this.tasks.push({ job: task, priority: /* lowest */ this.tasks.length });
-    } else {
-      this.tasks.push(task);
+  // enqueue and flush
+  schedule(task: Task) {
+    this.tasks.enqueue(task);
+
+    if (task === this.tasks.head) {
+      this.flushTask();
     }
   }
 
-  // enqueue and flushTask
-  schedule(task: Task['job']):void;
-  schedule(task: Task):void;
-  schedule(task: any) {
-    this.enqueue(task);
-    this.flushTask();
-  }
-
   protected flushTask() {
-    if (this.running) return;
-    this.running = true;
-
-    const start = Date.now();
+    const start = performance.now();
 
     while (true) {
-      const top = this.tasks.pop();
+      const pending = this.tasks.head;
 
-      if (!top) {
-        this.running = false;
-        break;
-      }
+      if (!pending) break;
 
       try {
-        top.job();
-      } catch {
-        // TODO
+        pending();
+        this.tasks.dequeue();
+      } catch (e) {
+        console.error(e); // TODO
       }
 
-      if (this.tasks.length === 0) {
-        this.running = false;
-        break;
-      }
-
-      const elapsed = Date.now() - start;
+      const elapsed = performance.now() - start;
 
       if (elapsed >= this.frameLimit) {
-        // shedule next loop
+      // shedule next loop
         this.channel.port2.postMessage('');
-        this.running = false;
         break;
       }
     }
@@ -79,6 +54,5 @@ export class TaskQueue {
   close() {
     this.channel.port1.close();
     this.channel.port2.close();
-    this.tasks.clear();
   }
 }

@@ -83,88 +83,53 @@ export const minimalEditSequence = <T>(source: T[], target: T[], compare = (a: T
   return formatIndex(e1.length < e2.length ? e1 : e2);
 };
 
-export class PriorHeap<T> {
-  heap: T[];
+export type Node<T> = {
+  value: T;
+  next?: Node<T>;
+  prev?: Node<T>;
+};
 
-  comparar:(a:T, b:T) => boolean ;
+export class LinkedQueue<T> {
+  private mHead?: Node<T>;
 
-  constructor(init:T[] = [], comparar: PriorHeap<T>['comparar'] = ((a, b) => a < b)) {
-    this.heap = init;
-    this.comparar = comparar;
+  get head() {
+    return this.mHead?.value;
   }
 
-  static parent(i:number) {
-    if (i === 1) return 0;
-    return Math.ceil((i - 2) / 2);
+  get tail() {
+    return this.mHead?.prev?.value;
   }
 
-  static leftChild(i:number) {
-    return 2 * i + 1;
-  }
+  enqueue(value: T): void {
+    const node: Node<T> = { value };
 
-  static rightChild(i:number) {
-    return 2 * i + 2;
-  }
-
-  protected bubble(i: number) {
-    while (true) {
-      const parentIndex = PriorHeap.parent(i);
-
-      if (i <= 0 || this.comparar(this.heap[parentIndex], this.heap[i])) break;
-
-      const temp = this.heap[parentIndex];
-      this.heap[parentIndex] = this.heap[i];
-      this.heap[i] = temp;
-      // eslint-disable-next-line no-param-reassign
-      i = parentIndex;
+    if (!this.mHead) {
+      node.next = node;
+      node.prev = node;
+      this.mHead = node;
+    } else {
+      const tail = this.mHead.prev!;
+      tail.next = node;
+      node.prev = tail;
+      node.next = this.mHead;
+      this.mHead.prev = node;
     }
   }
 
-  protected sink(i:number) {
-    let smallerIndex = i;
-    const leftIndex = PriorHeap.leftChild(i);
-    const rightIndex = PriorHeap.rightChild(i);
+  dequeue() {
+    if (!this.mHead) return undefined;
 
-    if (leftIndex < this.heap.length && this.comparar(this.heap[leftIndex], this.heap[smallerIndex])) {
-      smallerIndex = leftIndex;
-    }
-    if (rightIndex < this.heap.length && this.comparar(this.heap[rightIndex], this.heap[smallerIndex])) {
-      smallerIndex = rightIndex;
-    }
+    const { mHead: head } = this;
 
-    if (smallerIndex !== i) {
-      const temp = this.heap[smallerIndex];
-      this.heap[smallerIndex] = this.heap[i];
-      this.heap[i] = temp;
+    head.prev!.next = head.next;
+    head.next!.prev = head.prev;
 
-      this.sink(smallerIndex);
-    }
-  }
-
-  push(item: T) {
-    this.heap.push(item);
-    this.bubble(this.heap.length - 1);
-  }
-
-  pop() {
-    const top = this.heap.shift();
-
-    if (this.heap.length > 0) {
-      this.sink(0);
+    if (head.next === head) {
+      this.mHead = undefined;
+    } else {
+      this.mHead = head.next;
     }
 
-    return top;
-  }
-
-  top() {
-    return this.heap[0];
-  }
-
-  get length() {
-    return this.heap.length;
-  }
-
-  clear() {
-    this.heap = [];
+    return head;
   }
 }
