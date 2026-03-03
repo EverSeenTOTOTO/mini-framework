@@ -6,7 +6,8 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   rootDir: '.',
-  testEnvironment: 'node',
+  setupFiles: ['<rootDir>/jest.setup.js'],
+  testEnvironment: 'jsdom',
   testMatch: [
     '**/*.test.ts',
   ],

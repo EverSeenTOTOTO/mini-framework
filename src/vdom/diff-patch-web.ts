@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable no-param-reassign */
 import { diffObject, minimalEditSequence } from '@/utils';
-import { evalVNode, queue, VNode, VNodeComponent, VNodeText } from './target-web';
+import { evalVNode, queue, VNode, VNodeComponent, VNodeText, EvalContext } from './target-web';
 
 /* diff-patch actions */
 
@@ -218,8 +218,11 @@ export function diffPatchComponent(source: VNodeComponent, target: VNodeComponen
 
   target.reactHookStates = source.reactHookStates;
   target.vueHookStates = source.vueHookStates;
+  // 继承 hookId 计数器状态
+  target._currentHookId = 0;
 
-  const vdom = target.component(target.state);
+  // 使用 EvalContext 执行组件函数，确保 hooks 正确工作
+  const vdom = EvalContext.run(target, () => target.component(target.state));
   diffPatch(source.vdom, vdom, (actions) => {
     target.vdom = vdom;
     callback(actions);

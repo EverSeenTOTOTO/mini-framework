@@ -46,7 +46,21 @@ export interface VNodeComponent<T> extends VNodeBase<T, 'component'> {
   component: (state?: unknown) => VNode<T>,
   state?: unknown,
   reactHookStates: Map<number, UseStateHookState | UseEffectHookState>,
-  vueHookStates: WeakMap<object, Effect<unknown>[]>
+  vueHookStates: WeakMap<object, Effect<unknown>[]>,
+  /** 追踪当前 hook 位置，避免全局变量竞态 */
+  _currentHookId?: number,
+  /** 待处理的更新列表 */
+  _pendingUpdates?: PendingUpdate[],
+  /** 是否已调度更新 */
+  _isUpdateScheduled?: boolean,
+  /** 更新版本号，用于丢弃过期更新 */
+  _updateVersion?: number,
+}
+
+/** 待处理的更新 */
+export interface PendingUpdate {
+  hookId: number;
+  value: unknown | ((old: unknown) => unknown);
 }
 
 export type VueComponentDefine<T> = {
